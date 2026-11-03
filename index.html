@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>チームのページ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&family=M+PLUS+Rounded+1c:wght@500;700;800&family=Press+Start+2P&family=Dela+Gothic+One&family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<style>
+/* 2つの見た目：pop（マイページ・資料室・ロープレ）と pixel（原動力ジョブ診断。元のドット絵デザインのまま） */
+:root {
+  --bg: #fff3f7; --card: #ffffff; --ink: #3a1626; --sub: #8a4f66; --pink: #e8457f; --pink-soft: #ffd9e6;
+  --line: #f3bfd2; --good: #1f8a5b; --bad: #c9354a; --on-pink: #ffffff; --gold: #f5b301;
+  --display: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", sans-serif; /* 字はつぶれにくい丸ゴシック */
+  --num: "Dela Gothic One", "Hiragino Sans", sans-serif;                   /* 大きい数字だけ */
+  --body: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Hiragino Sans", sans-serif;
+}
+body[data-theme="pixel"] {
+  --bg: #0F2027; --panel: #16323D; --panel2: #1B1A3A; --line: #E8EEF0; --fg: #F2F5F0; --muted: #B9C9D2; --dim: #7F96A3;
+  --go: #39F5A0; --gold: #FFD23F; --pink: #FF6B8B;
+  --f-pixel: "DotGothic16", "Hiragino Sans", sans-serif;
+  --f-body: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", sans-serif;
+  --f-8bit: "Press Start 2P", "Courier New", monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.6;
+  padding: max(14px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(32px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  -webkit-text-size-adjust: 100%;
+}
+body[data-theme="pixel"] { color: var(--fg); font-family: var(--f-body); }
+body[data-theme="pixel"]::after { content: ""; position: fixed; inset: 0; pointer-events: none; background: repeating-linear-gradient(180deg, rgba(255,255,255,.025) 0 2px, transparent 2px 6px); }
+#app { max-width: 460px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+h1, h2, h3, p { margin: 0; }
+button { font: inherit; cursor: pointer; color: inherit; }
+[style*="--display"], .brand, .card h2, .go, .hero .name, .big-msg, .mp-head h1, .jobline b, .rank-b, .cd .nm, .choice .k, .rank, .pts .m, .doc h3 { font-weight: 800; }
+button:focus-visible { outline: 3px solid var(--pink); outline-offset: 2px; }
+
+/* ---- pop ---- */
+.brand { font-family: var(--display); font-size: 15px; color: var(--pink); letter-spacing: .06em; }
+.card { background: var(--card); border: 2px solid var(--line); border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.card h2 { font-family: var(--display); font-size: 17px; font-weight: 400; color: var(--pink); }
+.note { color: var(--sub); font-size: 14px; }
+.go { background: var(--pink); color: var(--on-pink); border: none; border-radius: 14px; padding: 14px; font-size: 18px; font-family: var(--display); }
+.ghost { background: transparent; border: 2px solid var(--line); border-radius: 14px; padding: 12px; font-weight: 700; }
+.row2 { display: flex; gap: 8px; } .row2 > * { flex: 1; }
+.hero { background: var(--pink); color: var(--on-pink); border-radius: 14px; padding: 14px; text-align: center; }
+.hero .meta { font-size: 13px; font-weight: 700; }
+.hero .name { font-family: var(--display); font-size: 32px; line-height: 1.2; }
+.center { text-align: center; }
+.big-msg { font-family: var(--display); font-size: 24px; color: var(--pink); }
+.spin { width: 36px; height: 36px; border: 4px solid var(--pink-soft); border-top-color: var(--pink); border-radius: 50%; animation: spin 1s linear infinite; margin: 40px auto 10px; }
+body[data-theme="pixel"] .spin { border-color: var(--panel); border-top-color: var(--go); }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* マイページ */
+.mp-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 2px; }
+.mp-head h1 { font-family: var(--display); font-size: 30px; font-weight: 400; line-height: 1.2; }
+.lv { background: #1c0b13; color: var(--gold); border-radius: 16px; padding: 6px 16px 8px; text-align: center; font-family: var(--num); font-size: 40px; line-height: 1; min-width: 92px; }
+.lv small { display: block; font-size: 13px; color: #fff; letter-spacing: .1em; margin-bottom: 2px; }
+.nums { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; }
+.num { background: var(--pink-soft); border-radius: 14px; padding: 10px 12px; position: relative; }
+.num .k { font-size: 13px; font-weight: 700; color: var(--sub); }
+.num .v { font-family: var(--num); font-size: 34px; line-height: 1.1; color: var(--ink); font-variant-numeric: tabular-nums; }
+.num .v small { font-size: 14px; color: var(--sub); font-family: var(--body); font-weight: 700; margin-left: 4px; }
+.num.done { background: var(--pink); } .num.done .k, .num.done .v, .num.done .v small { color: #fff; }
+.num .ok { position: absolute; right: 10px; top: 8px; font-family: var(--display); color: #fff; font-size: 18px; }
+.checks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.checks li { display: grid; grid-template-columns: 30px 1fr; gap: 8px; align-items: start; }
+.checks .m { font-family: var(--display); font-size: 20px; line-height: 1.2; color: var(--line); }
+.checks .m.on { color: var(--good); }
+.bar { height: 10px; background: var(--pink-soft); border-radius: 6px; overflow: hidden; margin-top: 4px; }
+.bar i { display: block; height: 100%; background: var(--pink); border-radius: 6px; transition: width .5s; }
+.small { font-size: 13px; color: var(--sub); }
+.jobline { display: flex; gap: 12px; align-items: center; }
+.jobline .jt { width: 64px; height: 64px; }
+.jobline b { font-family: var(--display); font-weight: 400; font-size: 20px; display: block; line-height: 1.3; }
+.recs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.recs li { display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px dashed var(--line); padding-bottom: 6px; }
+.rank-b { display: inline-block; font-family: var(--display); background: var(--ink); color: var(--bg); border-radius: 8px; padding: 0 10px; font-size: 14px; }
+
+/* ロープレ（元のカフェアポ道場と同じ） */
+.cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.cd { text-align: left; background: var(--card); border: 2px solid var(--line); border-radius: 16px; padding: 12px; display: flex; flex-direction: column; gap: 2px; min-height: 120px; }
+.cd .no { font-size: 12px; font-weight: 700; color: var(--pink); }
+.cd .nm { font-family: var(--display); font-size: 20px; line-height: 1.25; }
+.cd .jb { font-size: 12px; color: var(--sub); line-height: 1.4; }
+.cd:not(.off) { border: 3px solid var(--pink); background: var(--pink-soft); }
+.cd.off { opacity: .45; }
+.cd .tag { margin-top: auto; font-size: 12px; font-weight: 700; }
+dl.info { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 15px; }
+dl.info dt { color: var(--sub); font-weight: 700; } dl.info dd { margin: 0; min-width: 0; }
+.top { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; color: var(--sub); font-weight: 700; }
+.meter-num { font-family: var(--num); font-size: 28px; color: var(--pink); }
+.scene-label { font-size: 13px; font-weight: 700; color: var(--pink); }
+.bubble { background: var(--pink-soft); border-radius: 4px 16px 16px 16px; padding: 12px 14px; }
+.bubble b { color: var(--pink); }
+.act { font-size: 13px; color: var(--sub); }
+.you { align-self: flex-end; background: var(--card); border: 2px solid var(--pink); border-radius: 16px 4px 16px 16px; padding: 10px 14px; max-width: 90%; }
+.choices { display: flex; flex-direction: column; gap: 8px; }
+.choice { text-align: left; background: var(--card); border: 2px solid var(--line); border-radius: 14px; padding: 12px; font-weight: 500; display: flex; gap: 10px; }
+.choice .k { font-family: var(--display); color: var(--pink); flex: none; }
+.fb { border-radius: 12px; padding: 10px 12px; font-size: 14px; font-weight: 700; }
+.fb.up { background: #e3f4ec; color: var(--good); } .fb.down { background: #fbe4e8; color: var(--bad); } .fb.flat { background: var(--pink-soft); color: var(--sub); }
+.prods { display: flex; flex-wrap: wrap; gap: 8px; }
+.prod { background: var(--card); border: 2px solid var(--line); border-radius: 14px; padding: 10px 16px; font-weight: 700; }
+.prod[aria-pressed="true"] { background: var(--pink); color: var(--on-pink); border-color: var(--pink); }
+.score { text-align: center; }
+.score .big { font-family: var(--num); font-size: 84px; line-height: 1; color: var(--pink); font-variant-numeric: tabular-nums; }
+.score .big small { font-size: 22px; }
+.rank { display: inline-block; font-family: var(--display); font-size: 22px; background: var(--ink); color: var(--bg); border-radius: 10px; padding: 2px 18px; }
+.sec { font-size: 13px; font-weight: 700; color: var(--sub); margin-top: 4px; }
+.pts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.pts li { display: grid; grid-template-columns: 28px 1fr; gap: 6px; font-size: 15px; }
+.pts .m { font-family: var(--display); font-size: 18px; } .pts .ok { color: var(--good); } .pts .ng { color: var(--bad); }
+.pts small { display: block; color: var(--sub); font-size: 13px; }
+.line-card { background: var(--pink-soft); border-radius: 12px; padding: 10px 12px; font-weight: 700; }
+.err { color: var(--bad); font-size: 13px; }
+
+/* 資料室 */
+.doc { display: flex; flex-direction: column; gap: 8px; }
+.doc h3 { font-family: var(--display); font-weight: 400; font-size: 19px; line-height: 1.3; }
+.viewer-top { display: flex; align-items: center; gap: 8px; }
+.viewer-top .t { flex: 1; min-width: 0; font-weight: 700; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.viewer-top select { font: inherit; font-size: 14px; border: 2px solid var(--line); border-radius: 10px; padding: 4px 6px; background: var(--card); color: var(--ink); max-width: 46%; }
+.sheet { position: relative; width: 100%; background: #fff center / contain no-repeat; border-radius: 10px; border: 2px solid var(--line); overflow: hidden;
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: pan-y; }
+.wm { position: absolute; inset: -20%; display: flex; flex-wrap: wrap; align-content: space-around; justify-content: space-around; transform: rotate(-24deg); pointer-events: none; }
+.wm span { font-size: 15px; font-weight: 700; color: rgba(58, 22, 38, .10); padding: 22px 18px; white-space: nowrap; }
+.wm-corner { position: absolute; right: 8px; bottom: 6px; font-size: 11px; font-weight: 700; color: rgba(58, 22, 38, .35); pointer-events: none; }
+.sheet .lock { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; background: var(--card); text-align: center; padding: 20px; }
+.pager { display: flex; align-items: center; gap: 8px; }
+.pager button { flex: none; width: 64px; height: 48px; border-radius: 14px; border: none; background: var(--pink); color: #fff; font-family: var(--num); font-size: 20px; }
+.pager button:disabled { opacity: .3; }
+.pager .pg { flex: 1; text-align: center; font-family: var(--num); font-size: 20px; font-variant-numeric: tabular-nums; }
+
+/* ---- pixel（原動力ジョブ診断） ---- */
+.px-hero { display: flex; flex-direction: column; gap: 10px; padding-top: 8px; }
+.eyebrow { font-family: var(--f-8bit); font-size: 10px; letter-spacing: .12em; color: var(--go); }
+.px-hero h1 { font-family: var(--f-pixel); font-size: 34px; line-height: 1.2; font-weight: 400; }
+.px-hero .lead { color: var(--muted); font-size: 15px; }
+.party { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.pc { background: var(--jc); border: 2px solid rgba(255,255,255,.25); border-radius: 10px; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 0 5px; }
+.pc svg { width: 46px; height: 46px; display: block; }
+.pc span { font-size: 11px; font-weight: 800; white-space: nowrap; letter-spacing: -.5px; color: #fff; }
+.jt { display: inline-flex; align-items: center; justify-content: center; background: var(--jc); border: 2px solid rgba(255,255,255,.25); border-radius: 8px; flex: none; }
+.jt svg { width: 80%; height: 80%; display: block; }
+.px-btn { border: 3px solid var(--line); background: transparent; border-radius: 8px; padding: 12px 18px; font-weight: 800; color: var(--fg); }
+.px-btn.primary { background: var(--gold); border-color: var(--gold); color: #0F2027; font-size: 17px; }
+.px-btn:disabled { opacity: .45; }
+.hud { display: flex; align-items: center; gap: 12px; }
+.hud .label, .hud .count { font-family: var(--f-8bit); font-size: 10px; color: var(--go); white-space: nowrap; }
+.hud .count { color: var(--fg); }
+.px-bar { flex: 1; height: 18px; border: 3px solid var(--line); border-radius: 4px; padding: 2px; display: flex; }
+.px-bar i { display: block; height: 100%; background: var(--go); transition: width .25s; }
+.q { background: var(--panel); border: 3px solid #2C4A56; border-radius: 10px; padding: 20px 18px; display: flex; flex-direction: column; gap: 16px; }
+.q .no { font-family: var(--f-8bit); font-size: 11px; color: var(--gold); }
+.q .tx { font-size: 20px; font-weight: 800; line-height: 1.5; }
+.opts { display: flex; flex-direction: column; gap: 8px; }
+.opt { min-height: 50px; border-radius: 8px; border: 2px solid #3B5C69; background: #0F2027; display: flex; align-items: center; gap: 12px; padding: 6px 14px; font-weight: 700; color: var(--muted); text-align: left; }
+.opt b { font-family: var(--f-8bit); font-size: 13px; color: var(--fg); font-weight: 400; width: 18px; }
+.opt[aria-pressed="true"] { background: var(--go); border-color: var(--go); color: #0F2027; } .opt[aria-pressed="true"] b { color: #0F2027; }
+.q-foot { display: flex; justify-content: space-between; align-items: center; }
+.link { background: none; border: none; color: var(--muted); font-weight: 700; padding: 8px 0; }
+.gate { background: var(--panel); border: 3px solid #2C4A56; border-radius: 12px; padding: 28px 20px; display: flex; flex-direction: column; gap: 10px; align-items: center; text-align: center; }
+.gate .pixel { font-family: var(--f-pixel); font-size: 22px; }
+.job { background: var(--panel); border: 3px solid var(--line); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+.job.main { border-color: var(--gold); }
+.job .tag { align-self: flex-start; font-family: var(--f-pixel); font-size: 14px; padding: 2px 10px; border-radius: 4px; background: var(--gold); color: #0F2027; }
+.job.sub .tag { background: var(--go); }
+.job .id { display: flex; gap: 14px; align-items: center; }
+.job .id .jt { width: 92px; height: 92px; border-radius: 12px; }
+.job .id.s .jt { width: 64px; height: 64px; }
+.job h3 { font-family: var(--f-pixel); font-size: 28px; line-height: 1.2; font-weight: 400; }
+.job .drive { font-weight: 800; color: var(--muted); }
+.job .catch { font-size: 18px; font-weight: 800; }
+.rows { margin: 0; display: flex; flex-direction: column; gap: 10px; }
+.rows > div { border-left: 5px solid var(--go); padding: 2px 0 2px 12px; }
+.rows dt { font-family: var(--f-pixel); font-size: 13px; color: var(--go); }
+.rows dd { margin: 0; font-size: 15px; }
+.rows .plain { border-color: #4E6E7C; } .rows .plain dt { color: var(--muted); }
+.combo { background: var(--panel2); border: 3px solid var(--line); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+.combo .k { font-family: var(--f-8bit); font-size: 10px; color: var(--go); }
+.combo h3 { font-family: var(--f-pixel); font-size: 26px; color: var(--gold); font-weight: 400; }
+.px-note { font-size: 13px; color: var(--dim); }
+</style>
+</head>
+<body data-theme="pop">
+<main id="app" aria-live="polite"><div class="spin" role="status" aria-label="読み込み中"></div></main>
+<script>
+const LIFF_ID = '2012349427-GXo0mPcm';
+const API_URL = 'https://script.google.com/macros/s/AKfycbzBG6jHOwFPxy2vNnifHZ1G50QqsF4PD7tJ06ggk4apgXA7P5ECaaUyrVdFJPA_FYuejQ/exec';
+
+const SPR={"win": "<path fill=\"#E04848\" d=\"M8 0h2v1h-2zM7 1h3v1h-3zM5 10h8v1h-8zM5 11h2v1h-2zM9 11h3v1h-3zM5 12h7v1h-7z\"/><path fill=\"#1A1A2E\" d=\"M4 2h8v1h-8zM3 3h1v1h-1zM12 3h1v1h-1zM3 4h1v1h-1zM12 4h1v1h-1zM3 5h1v1h-1zM12 5h1v1h-1zM3 6h1v1h-1zM5 6h1v1h-1zM6 6h1v1h-1zM10 6h1v1h-1zM11 6h1v1h-1zM3 7h1v1h-1zM12 7h1v1h-1zM4 8h1v1h-1zM11 8h1v1h-1zM2 9h3v1h-3zM11 9h2v1h-2zM1 10h1v1h-1zM4 10h1v1h-1zM13 10h1v1h-1zM1 11h1v1h-1zM4 11h1v1h-1zM1 12h1v1h-1zM4 12h1v1h-1zM12 12h1v1h-1zM2 13h2v1h-2zM5 13h1v1h-1zM11 13h1v1h-1zM5 14h1v1h-1zM7 14h1v1h-1zM9 14h1v1h-1zM11 14h1v1h-1zM5 15h3v1h-3zM9 15h3v1h-3z\"/><path fill=\"#C9D2DC\" d=\"M4 3h8v1h-8zM4 4h1v1h-1zM11 4h1v1h-1zM5 9h6v1h-6z\"/><path fill=\"#8794A3\" d=\"M5 4h6v1h-6z\"/><path fill=\"#FFD7B0\" d=\"M4 5h8v1h-8zM4 6h1v1h-1zM7 6h3v1h-3zM12 6h1v1h-1zM4 7h8v1h-8zM5 8h6v1h-6zM12 11h1v1h-1z\"/><path fill=\"#EEF3F8\" d=\"M14 8h1v1h-1zM14 9h1v1h-1zM14 10h1v1h-1z\"/><path fill=\"#F2C14E\" d=\"M2 10h1v1h-1zM7 11h2v1h-2zM13 11h2v1h-2zM2 12h1v1h-1z\"/><path fill=\"#9E2A2B\" d=\"M3 10h1v1h-1zM2 11h2v1h-2zM3 12h1v1h-1zM6 13h5v1h-5z\"/><path fill=\"#7A4A2A\" d=\"M14 12h1v1h-1z\"/><path fill=\"#3B4A6B\" d=\"M6 14h1v1h-1zM10 14h1v1h-1z\"/>", "grow": "<path fill=\"#1A1A2E\" d=\"M4 1h8v1h-8zM3 2h1v1h-1zM12 2h1v1h-1zM3 3h1v1h-1zM12 3h2v1h-2zM3 4h1v1h-1zM12 4h1v1h-1zM3 5h1v1h-1zM5 5h1v1h-1zM6 5h1v1h-1zM10 5h1v1h-1zM11 5h1v1h-1zM3 6h1v1h-1zM12 6h1v1h-1zM4 7h1v1h-1zM11 7h1v1h-1zM5 8h6v1h-6zM3 9h2v1h-2zM11 9h2v1h-2zM2 10h1v1h-1zM2 11h1v1h-1zM3 12h1v1h-1zM12 12h2v1h-2zM3 13h1v1h-1zM12 13h1v1h-1zM4 14h1v1h-1zM6 14h1v1h-1zM9 14h1v1h-1zM11 14h1v1h-1zM4 15h3v1h-3zM9 15h3v1h-3z\"/><path fill=\"#FFD7B0\" d=\"M4 2h8v1h-8zM4 4h8v1h-8zM4 5h1v1h-1zM7 5h3v1h-3zM12 5h1v1h-1zM4 6h8v1h-8zM5 7h6v1h-6zM3 10h1v1h-1zM12 10h1v1h-1zM3 11h1v1h-1zM12 11h1v1h-1z\"/><path fill=\"#F08A24\" d=\"M4 3h8v1h-8zM5 9h6v1h-6zM4 10h1v1h-1zM11 10h1v1h-1zM4 11h8v1h-8zM4 12h3v1h-3zM8 12h4v1h-4zM4 13h8v1h-8z\"/><path fill=\"#8B5A2B\" d=\"M14 7h1v1h-1zM14 8h1v1h-1zM14 9h1v1h-1zM13 10h2v1h-2zM13 11h1v1h-1zM14 12h1v1h-1zM14 13h1v1h-1zM14 14h1v1h-1z\"/><path fill=\"#B85C12\" d=\"M5 10h1v1h-1zM10 10h1v1h-1zM7 12h1v1h-1z\"/><path fill=\"#FFD23F\" d=\"M6 10h4v1h-4z\"/><path fill=\"#5C3A1E\" d=\"M5 14h1v1h-1zM10 14h1v1h-1z\"/>", "star": "<path fill=\"#1A1A2E\" d=\"M2 0h2v1h-2zM12 0h2v1h-2zM1 1h1v1h-1zM4 1h1v1h-1zM6 1h4v1h-4zM11 1h1v1h-1zM14 1h1v1h-1zM1 2h1v1h-1zM5 2h1v1h-1zM10 2h1v1h-1zM14 2h1v1h-1zM2 3h1v1h-1zM13 3h1v1h-1zM3 4h1v1h-1zM12 4h1v1h-1zM3 5h1v1h-1zM12 5h1v1h-1zM3 6h1v1h-1zM5 6h1v1h-1zM6 6h1v1h-1zM10 6h1v1h-1zM11 6h1v1h-1zM3 7h1v1h-1zM12 7h1v1h-1zM4 8h1v1h-1zM11 8h1v1h-1zM13 8h1v1h-1zM5 9h6v1h-6zM13 9h1v1h-1zM3 10h2v1h-2zM11 10h2v1h-2zM14 10h1v1h-1zM2 11h1v1h-1zM12 11h1v1h-1zM3 12h1v1h-1zM11 12h1v1h-1zM2 13h1v1h-1zM13 13h1v1h-1zM4 14h1v1h-1zM6 14h1v1h-1zM9 14h1v1h-1zM11 14h1v1h-1zM4 15h3v1h-3zM9 15h3v1h-3z\"/><path fill=\"#FFD23F\" d=\"M2 1h2v1h-2zM12 1h2v1h-2zM2 2h3v1h-3zM6 2h4v1h-4zM11 2h3v1h-3zM3 3h10v1h-10zM4 4h8v1h-8z\"/><path fill=\"#FFD7B0\" d=\"M4 5h8v1h-8zM4 6h1v1h-1zM7 6h3v1h-3zM12 6h1v1h-1zM5 7h6v1h-6zM5 8h2v1h-2zM9 8h2v1h-2zM13 10h1v1h-1zM3 11h1v1h-1zM5 14h1v1h-1zM10 14h1v1h-1z\"/><path fill=\"#FF9EC4\" d=\"M4 7h1v1h-1zM11 7h1v1h-1z\"/><path fill=\"#FF6FA3\" d=\"M7 8h2v1h-2zM5 10h6v1h-6zM4 11h3v1h-3zM9 11h3v1h-3zM4 12h1v1h-1zM6 12h3v1h-3zM10 12h1v1h-1zM3 13h10v1h-10z\"/><path fill=\"#8A8FA3\" d=\"M14 8h1v1h-1zM14 9h1v1h-1z\"/><path fill=\"#FFFFFF\" d=\"M7 11h2v1h-2z\"/><path fill=\"#C9407A\" d=\"M5 12h1v1h-1zM9 12h1v1h-1z\"/>", "explore": "<path fill=\"#1A1A2E\" d=\"M5 0h6v1h-6zM4 1h1v1h-1zM11 1h1v1h-1zM4 2h1v1h-1zM11 2h1v1h-1zM4 3h1v1h-1zM11 3h1v1h-1zM1 4h2v1h-2zM13 4h2v1h-2zM3 5h1v1h-1zM12 5h1v1h-1zM3 6h1v1h-1zM5 6h1v1h-1zM6 6h1v1h-1zM10 6h1v1h-1zM11 6h1v1h-1zM3 7h1v1h-1zM12 7h1v1h-1zM4 8h1v1h-1zM11 8h1v1h-1zM5 9h6v1h-6zM3 10h2v1h-2zM11 10h2v1h-2zM1 11h1v1h-1zM3 11h1v1h-1zM12 11h1v1h-1zM14 11h1v1h-1zM1 12h1v1h-1zM3 12h1v1h-1zM12 12h1v1h-1zM14 12h1v1h-1zM3 13h1v1h-1zM12 13h1v1h-1zM4 14h1v1h-1zM6 14h1v1h-1zM9 14h1v1h-1zM11 14h1v1h-1zM4 15h3v1h-3zM9 15h3v1h-3z\"/><path fill=\"#C8A26B\" d=\"M5 1h6v1h-6zM5 2h6v1h-6zM3 4h10v1h-10z\"/><path fill=\"#8C6A3C\" d=\"M5 3h6v1h-6zM5 14h1v1h-1zM10 14h1v1h-1z\"/><path fill=\"#FFD7B0\" d=\"M4 5h8v1h-8zM4 6h1v1h-1zM7 6h3v1h-3zM12 6h1v1h-1zM4 7h8v1h-8zM5 8h6v1h-6zM4 11h1v1h-1zM11 11h1v1h-1z\"/><path fill=\"#7A4A2A\" d=\"M2 10h1v1h-1zM13 10h1v1h-1zM2 11h1v1h-1zM13 11h1v1h-1zM2 12h1v1h-1zM13 12h1v1h-1zM2 13h1v1h-1zM13 13h1v1h-1z\"/><path fill=\"#3FA45A\" d=\"M5 10h6v1h-6zM5 11h1v1h-1zM7 11h2v1h-2zM10 11h1v1h-1zM4 12h2v1h-2zM7 12h5v1h-5z\"/><path fill=\"#25703A\" d=\"M6 11h1v1h-1zM9 11h1v1h-1zM4 13h8v1h-8z\"/><path fill=\"#D9534F\" d=\"M6 12h1v1h-1z\"/>", "give": "<path fill=\"#1A1A2E\" d=\"M6 0h4v1h-4zM4 1h2v1h-2zM10 1h2v1h-2zM3 2h1v1h-1zM12 2h1v1h-1zM3 3h1v1h-1zM12 3h1v1h-1zM3 4h1v1h-1zM12 4h1v1h-1zM14 4h1v1h-1zM3 5h1v1h-1zM12 5h1v1h-1zM3 6h1v1h-1zM6 6h1v1h-1zM7 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM3 7h1v1h-1zM12 7h1v1h-1zM3 8h1v1h-1zM12 8h1v1h-1zM3 9h2v1h-2zM6 9h4v1h-4zM11 9h2v1h-2zM2 10h1v1h-1zM13 10h1v1h-1zM2 11h1v1h-1zM13 11h1v1h-1zM2 12h1v1h-1zM13 12h1v1h-1zM2 13h1v1h-1zM13 13h1v1h-1zM4 14h1v1h-1zM6 14h1v1h-1zM9 14h1v1h-1zM11 14h1v1h-1zM4 15h3v1h-3zM9 15h3v1h-3z\"/><path fill=\"#F4F7FA\" d=\"M6 1h4v1h-4zM4 2h3v1h-3zM9 2h3v1h-3zM4 3h2v1h-2zM10 3h2v1h-2zM4 4h3v1h-3zM9 4h3v1h-3zM4 5h1v1h-1zM4 6h1v1h-1zM4 7h1v1h-1zM4 8h2v1h-2zM5 9h1v1h-1zM3 10h3v1h-3zM10 10h3v1h-3zM3 11h2v1h-2zM11 11h2v1h-2zM4 12h1v1h-1zM11 12h1v1h-1z\"/><path fill=\"#FFE680\" d=\"M14 1h1v1h-1z\"/><path fill=\"#E04848\" d=\"M7 2h2v1h-2zM6 3h4v1h-4zM7 4h2v1h-2zM7 11h2v1h-2z\"/><path fill=\"#F2C14E\" d=\"M14 2h1v1h-1zM14 3h1v1h-1z\"/><path fill=\"#FFD7B0\" d=\"M5 5h6v1h-6zM5 6h1v1h-1zM8 6h2v1h-2zM5 7h6v1h-6zM6 8h4v1h-4zM13 9h1v1h-1z\"/><path fill=\"#C5D3E0\" d=\"M11 5h1v1h-1zM11 6h1v1h-1zM11 7h1v1h-1zM10 8h2v1h-2zM10 9h1v1h-1zM3 12h1v1h-1zM12 12h1v1h-1zM3 13h2v1h-2zM11 13h2v1h-2z\"/><path fill=\"#5DADE2\" d=\"M14 5h1v1h-1zM14 6h1v1h-1zM14 7h1v1h-1zM14 8h1v1h-1zM14 9h1v1h-1zM6 10h4v1h-4zM14 10h1v1h-1zM5 11h2v1h-2zM9 11h2v1h-2zM14 11h1v1h-1zM5 12h6v1h-6zM14 12h1v1h-1zM5 13h6v1h-6z\"/><path fill=\"#2E7DB5\" d=\"M5 14h1v1h-1zM10 14h1v1h-1z\"/>", "team": "<path fill=\"#F2C14E\" d=\"M7 0h2v1h-2zM14 10h1v1h-1zM3 11h1v1h-1zM8 11h2v1h-2zM13 11h2v1h-2z\"/><path fill=\"#1A1A2E\" d=\"M4 1h8v1h-8zM3 2h1v1h-1zM12 2h1v1h-1zM3 3h1v1h-1zM12 3h1v1h-1zM3 4h1v1h-1zM12 4h1v1h-1zM3 5h1v1h-1zM5 5h1v1h-1zM10 5h1v1h-1zM12 5h1v1h-1zM3 6h1v1h-1zM12 6h1v1h-1zM3 7h1v1h-1zM12 7h1v1h-1zM4 8h1v1h-1zM11 8h1v1h-1zM2 9h3v1h-3zM11 9h2v1h-2zM1 10h1v1h-1zM4 10h1v1h-1zM13 10h1v1h-1zM1 11h1v1h-1zM5 11h1v1h-1zM12 11h1v1h-1zM1 12h1v1h-1zM4 12h1v1h-1zM12 12h1v1h-1zM2 13h2v1h-2zM5 13h1v1h-1zM11 13h1v1h-1zM5 14h1v1h-1zM7 14h1v1h-1zM9 14h1v1h-1zM11 14h1v1h-1zM5 15h3v1h-3zM9 15h3v1h-3z\"/><path fill=\"#B8C4D0\" d=\"M4 2h8v1h-8zM4 3h1v1h-1zM6 3h4v1h-4zM11 3h1v1h-1zM4 5h1v1h-1zM7 5h2v1h-2zM11 5h1v1h-1zM4 6h8v1h-8zM5 7h6v1h-6zM5 9h6v1h-6zM13 12h1v1h-1zM6 14h1v1h-1zM10 14h1v1h-1z\"/><path fill=\"#7C8B9C\" d=\"M5 3h1v1h-1zM10 3h1v1h-1zM4 7h1v1h-1zM11 7h1v1h-1zM5 8h6v1h-6z\"/><path fill=\"#3A4556\" d=\"M4 4h8v1h-8zM6 5h1v1h-1zM9 5h1v1h-1z\"/><path fill=\"#EEF3F8\" d=\"M14 7h1v1h-1zM14 8h1v1h-1zM14 9h1v1h-1z\"/><path fill=\"#2E4A8C\" d=\"M2 10h2v1h-2zM5 10h8v1h-8zM2 11h1v1h-1zM4 11h1v1h-1zM6 11h2v1h-2zM10 11h2v1h-2zM2 12h2v1h-2zM5 12h7v1h-7z\"/><path fill=\"#1E3266\" d=\"M6 13h5v1h-5z\"/>", "rebel": "<path fill=\"#1A1A2E\" d=\"M6 0h4v1h-4zM4 1h2v1h-2zM11 1h2v1h-2zM3 2h1v1h-1zM13 2h1v1h-1zM3 3h1v1h-1zM13 3h1v1h-1zM3 4h1v1h-1zM13 4h1v1h-1zM3 5h1v1h-1zM13 5h1v1h-1zM3 6h1v1h-1zM13 6h1v1h-1zM3 7h1v1h-1zM13 7h1v1h-1zM2 8h1v1h-1zM6 8h5v1h-5zM1 9h1v1h-1zM14 9h1v1h-1zM0 10h1v1h-1zM14 10h1v1h-1zM0 11h1v1h-1zM15 11h1v1h-1zM0 12h1v1h-1zM4 12h1v1h-1zM11 12h1v1h-1zM15 12h1v1h-1zM0 13h1v1h-1zM4 13h1v1h-1zM11 13h1v1h-1zM15 13h1v1h-1zM4 14h1v1h-1zM6 14h1v1h-1zM9 14h1v1h-1zM11 14h1v1h-1zM4 15h3v1h-3zM9 15h3v1h-3z\"/><path fill=\"#3B2150\" d=\"M6 1h5v1h-5zM4 2h9v1h-9zM4 3h1v1h-1zM12 3h1v1h-1zM4 4h1v1h-1zM12 4h1v1h-1zM4 5h1v1h-1zM12 5h1v1h-1zM4 6h1v1h-1zM12 6h1v1h-1zM4 7h1v1h-1zM11 7h2v1h-2zM3 8h3v1h-3zM11 8h4v1h-4zM2 9h2v1h-2zM12 9h2v1h-2zM1 10h3v1h-3zM12 10h2v1h-2zM1 11h2v1h-2zM13 11h2v1h-2zM1 12h2v1h-2zM13 12h2v1h-2zM1 13h1v1h-1zM14 13h1v1h-1z\"/><path fill=\"#22122F\" d=\"M5 3h7v1h-7zM5 7h1v1h-1zM10 7h1v1h-1zM5 13h6v1h-6z\"/><path fill=\"#2A2A3A\" d=\"M5 4h7v1h-7zM5 5h1v1h-1zM7 5h3v1h-3zM11 5h1v1h-1zM5 14h1v1h-1zM10 14h1v1h-1z\"/><path fill=\"#FF4D6D\" d=\"M6 5h1v1h-1zM10 5h1v1h-1z\"/><path fill=\"#E8C4A6\" d=\"M5 6h7v1h-7zM6 7h4v1h-4zM3 11h1v1h-1zM12 11h1v1h-1z\"/><path fill=\"#8E44AD\" d=\"M4 9h8v1h-8zM5 10h3v1h-3zM9 10h3v1h-3zM4 11h8v1h-8zM5 12h6v1h-6z\"/><path fill=\"#B26BD6\" d=\"M4 10h1v1h-1z\"/><path fill=\"#C0392B\" d=\"M8 10h1v1h-1z\"/>", "guard": "<path fill=\"#1A1A2E\" d=\"M4 1h8v1h-8zM3 2h1v1h-1zM12 2h1v1h-1zM3 3h1v1h-1zM12 3h1v1h-1zM3 4h1v1h-1zM12 4h2v1h-2zM3 5h1v1h-1zM5 5h1v1h-1zM6 5h1v1h-1zM10 5h1v1h-1zM11 5h1v1h-1zM3 6h1v1h-1zM12 6h1v1h-1zM3 7h1v1h-1zM12 7h1v1h-1zM4 8h1v1h-1zM11 8h1v1h-1zM5 9h6v1h-6zM3 10h2v1h-2zM11 10h2v1h-2zM2 11h1v1h-1zM13 11h1v1h-1zM3 12h1v1h-1zM12 12h1v1h-1zM3 13h1v1h-1zM12 13h1v1h-1zM4 14h1v1h-1zM6 14h1v1h-1zM9 14h1v1h-1zM11 14h1v1h-1zM4 15h3v1h-3zM9 15h3v1h-3z\"/><path fill=\"#2F3A4A\" d=\"M4 2h8v1h-8zM4 3h8v1h-8zM4 6h8v1h-8zM4 7h8v1h-8zM5 8h6v1h-6zM5 10h6v1h-6zM4 11h2v1h-2zM10 11h2v1h-2zM4 12h8v1h-8zM4 13h1v1h-1zM7 13h2v1h-2zM11 13h1v1h-1zM5 14h1v1h-1zM10 14h1v1h-1z\"/><path fill=\"#D63A3A\" d=\"M13 3h2v1h-2zM4 4h8v1h-8zM14 4h2v1h-2zM15 5h1v1h-1zM6 11h4v1h-4z\"/><path fill=\"#FFD7B0\" d=\"M4 5h1v1h-1zM7 5h3v1h-3zM12 5h1v1h-1zM3 11h1v1h-1zM12 11h1v1h-1z\"/><path fill=\"#1E2633\" d=\"M5 13h2v1h-2zM9 13h2v1h-2z\"/><path fill=\"#C8D0D8\" d=\"M14 13h1v1h-1zM13 14h1v1h-1zM15 14h1v1h-1zM14 15h1v1h-1z\"/><path fill=\"#8A96A3\" d=\"M14 14h1v1h-1z\"/>"};
+const JC={"win": "#7A2630", "grow": "#7A4A16", "star": "#7A2E5A", "explore": "#2E5E3A", "give": "#2E5272", "team": "#2A3A6E", "rebel": "#4A2A6A", "guard": "#33404E"};
+const JOB_NAMES = { win: '戦士', grow: '修行僧', star: 'アイドル', explore: '冒険家', give: 'ヒーラー', team: '騎士', rebel: 'ダークヒーロー', guard: '忍者' };
+const spr = k => `<svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true">${SPR[k]}</svg>`;
+const sprite = k => `<span class="jt" style="--jc:${JC[k]}">${spr(k)}</span>`;
+
+const app = document.getElementById('app');
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const PAGE = new URLSearchParams(location.search).get('p') || 'mypage';
+const go = p => { location.search = '?p=' + p; };
+const top0 = () => window.scrollTo(0, 0);
+const spin = () => { app.innerHTML = '<div class="spin" role="status" aria-label="読み込み中"></div>'; };
+
+class Stop extends Error {}
+
+async function api(name, data) {
+  let res;
+  try {
+    res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(Object.assign({ api: name, idToken: liff.getIDToken() }, data || {})) });
+  } catch (e) { fail('通信がうまくいかんかった。電波のいいところで開き直してな。'); throw new Stop(); }
+  const j = await res.json();
+  if (j.error === 'login') { liff.logout(); liff.login({ redirectUri: location.href }); throw new Stop(); }
+  if (j.gate && j.gate !== 'ok') { gate(j.gate); throw new Stop(); }
+  if (j.error === 'server') { fail('サーバーでうまくいかんかった。少し時間をおいて開き直してな。'); throw new Stop(); }
+  return j;
+}
+
+function fail(text) {
+  app.innerHTML = document.body.dataset.theme === 'pixel'
+    ? `<div class="gate"><p class="pixel">エラー</p><p>${esc(text)}</p></div>`
+    : `<div class="card center"><p class="big-msg">あれ？</p><p>${esc(text)}</p></div>`;
+}
+
+function gate(kind) {
+  const t = {
+    none: ['メンバー専用です', '公式LINEでの登録がすんでから使えるで。トークで何か送ると登録がはじまるよ。'],
+    wait: ['承認待ちです', '登録ありがとう！ 確認がすんだら使えるようになるで。もう少し待っててな。'],
+    left: ['このページは使えません', 'いまは使えない設定になってるで。']
+  }[kind] || ['開けへんかった', ''];
+  app.innerHTML = document.body.dataset.theme === 'pixel'
+    ? `<div class="gate"><p class="pixel">${t[0]}</p><p style="color:var(--muted)">${t[1]}</p></div>`
+    : `<div class="card center"><p class="big-msg">${t[0]}</p><p class="note">${t[1]}</p></div>`;
+}
+
+/* ---------- マイページ ---------- */
+
+async function mypage() {
+  const { me, mypage: mp } = await api('me');
+  const lvNow = me.lv || 0;
+  const nums = mp.month.items.map(x => `<div class="num${x.done ? ' done' : ''}">${x.done ? '<span class="ok">✓</span>' : ''}
+    <div class="k">${esc(x.name)}</div><div class="v">${x.now}<small>/ ${x.goal == null ? 'ー' : x.goal}${esc(x.unit)}</small></div></div>`).join('');
+  const goalNote = mp.month.goalFrom === '今月' ? '' : `<p class="small">今月の目標がまだやから、${mp.month.goalFrom === '先月と同じ' ? '先月の目標' : '目安の数字'}で表示してるで。</p>`;
+  const lvCard = mp.level.next ? `<div class="card"><h2>Lv${mp.level.next}まで</h2><ul class="checks">${mp.level.checks.map(c => c.manual
+      ? `<li><span class="m">・</span><div>${esc(c.text)}<div class="small">1on1で一緒に確認しよう</div></div></li>`
+      : `<li><span class="m${c.done ? ' on' : ''}">${c.done ? '✓' : '・'}</span><div>${esc(c.text)}<div class="small">${Math.min(c.now, c.need)} / ${c.need}</div><div class="bar"><i style="width:${Math.min(100, c.now / c.need * 100)}%"></i></div></div></li>`).join('')}</ul></div>`
+    : `<div class="card"><h2>最高レベル</h2><p>Lv5！ ここからはチームを引っぱる番やで。</p></div>`;
+  const sh = mp.shindan;
+  const shCard = sh ? `<div class="card"><h2>あなたの原動力</h2>
+      <div class="jobline">${sprite(sh.main.key)}<div><span class="small">メイン</span><b>${esc(sh.main.job)}</b><span class="small">${esc(sh.main.catch)}</span></div></div>
+      <div class="jobline">${sprite(sh.sub.key)}<div><span class="small">サブ</span><b>${esc(sh.sub.job)}</b><span class="small">${esc(sh.sub.catch)}</span></div></div>
+      <p class="small">タイプ：${esc(sh.type.name)}</p><button class="ghost" data-go="shindan">結果をくわしく見る</button></div>`
+    : `<div class="card"><h2>あなたの原動力</h2><p>まだ診断してへんで。24問・約5分で、自分を動かすエンジンが分かるよ。</p><button class="go" data-go="shindan">診断をはじめる</button></div>`;
+  const recs = mp.dojo.length ? `<ul class="recs">${mp.dojo.map(r => `<li><span>No.${r.no} ${esc(r.name)}<span class="small">（${r.count}回）</span></span><span>${r.best}点 <span class="rank-b">${esc(r.rank)}</span></span></li>`).join('')}</ul>` : '<p class="note">まだ挑戦してへんで。</p>';
+  app.innerHTML = `
+    <div class="brand">MY PAGE</div>
+    <header class="mp-head"><h1>${esc(me.nick)}</h1><div class="lv"><small>Lv</small>${lvNow}</div></header>
+    <div class="card"><h2>今月の数字</h2><p class="small">${esc(mp.month.label)}　今 / 目標</p><div class="nums">${nums}</div>${goalNote}</div>
+    ${lvCard}${shCard}
+    <div class="card"><h2>ロープレの記録</h2>${recs}<button class="go" data-go="dojo">ロープレする</button></div>
+    <button class="ghost" data-go="shiryo">資料室を開く</button>`;
+  app.querySelectorAll('[data-go]').forEach(b => { b.onclick = () => go(b.dataset.go); });
+}
+
+/* ---------- 原動力ジョブ診断（質問と採点はサーバー側） ---------- */
+
+async function shindan() {
+  const j = await api('shindan_start');
+  const hero = `<header class="px-hero"><p class="eyebrow">SELF-DRIVE LAB</p><h1>原動力ジョブ診断</h1>
+    <div class="party" aria-hidden="true">${Object.keys(JC).map(k => `<div class="pc" style="--jc:${JC[k]}">${spr(k)}<span>${JOB_NAMES[k]}</span></div>`).join('')}</div></header>`;
+  if (j.taken) {
+    app.innerHTML = hero + `<div class="gate"><p class="pixel">受験済みです</p><p style="color:var(--muted)">あなたの結果はこれやで。</p></div>` + resultHtml(j.result);
+    return;
+  }
+  const qs = j.questions, labels = j.labels;
+  const ans = Array(qs.length).fill(0);
+  let i = 0;
+  const intro = () => {
+    app.innerHTML = hero + `<p class="lead" style="color:var(--muted)">${qs.length}の質問に答えると、あなたを動かす8つの原動力のうち、いちばん強い2つ（メインジョブとサブジョブ）が分かるで。「こうありたい」やなくて、今のふだんの自分に近いほうを選んでな。</p>
+      <p class="px-note">結果（名前・ジョブ・点数）は、ふみと大輔だけに届くで。受けられるのは1回だけ。</p>
+      <button class="px-btn primary" id="start">はじめる（約5分）</button>`;
+    document.getElementById('start').onclick = () => { i = 0; ask(); };
+  };
+  const ask = () => {
+    const n = ans.filter(Boolean).length;
+    app.innerHTML = `<div class="hud" role="status"><span class="label">EXP</span><div class="px-bar"><i style="width:${n / qs.length * 100}%"></i></div><span class="count">${n}/${qs.length}</span></div>
+      <div class="q"><span class="no">Q${String(i + 1).padStart(2, '0')}</span><p class="tx" id="qt">${esc(qs[i])}</p>
+      <div class="opts" role="group" aria-labelledby="qt">${[5, 4, 3, 2, 1].map(v => `<button class="opt" data-v="${v}" aria-pressed="${ans[i] === v}"><b>${v}</b>${esc(labels[v - 1])}</button>`).join('')}</div></div>
+      <div class="q-foot"><button class="link" id="back" ${i === 0 ? 'hidden' : ''}>◀ 前の質問</button><span></span></div>`;
+    app.querySelectorAll('.opt').forEach(b => { b.onclick = () => {
+      ans[i] = Number(b.dataset.v);
+      b.setAttribute('aria-pressed', 'true');
+      setTimeout(() => { if (i < qs.length - 1) { i++; ask(); } else confirmSend(); }, 160);
+    }; });
+    document.getElementById('back').onclick = () => { i--; ask(); };
+    top0();
+  };
+  const confirmSend = () => {
+    app.innerHTML = `<div class="hud"><span class="label">EXP</span><div class="px-bar"><i style="width:100%"></i></div><span class="count">${qs.length}/${qs.length}</span></div>
+      <div class="gate"><p class="pixel">全問クリア！</p><p style="color:var(--muted)">「結果を見る」を押すと、結果が出て、ふみと大輔に届くで。</p>
+      <button class="px-btn primary" id="send">結果を見る</button><button class="link" id="back">◀ 最後の質問にもどる</button></div>`;
+    document.getElementById('back').onclick = () => { i = qs.length - 1; ask(); };
+    document.getElementById('send').onclick = async () => {
+      spin();
+      const r = await api('shindan_submit', { answers: ans });
+      if (r.error) return fail('答えがうまく届かんかった。もう一回開き直してな。');
+      app.innerHTML = hero + resultHtml(r.result);
+      top0();
+    };
+  };
+  intro();
+}
+
+function resultHtml(r) {
+  return `<p class="eyebrow" style="margin-top:8px">RESULT</p>
+    <article class="job main"><span class="tag">メインジョブ（エンジン）</span>
+      <div class="id">${sprite(r.main.key)}<div><h3>${esc(r.main.job)}</h3><p class="drive">${esc(r.main.drive)}</p></div></div>
+      <p class="catch">${esc(r.main.catch)}</p>
+      <dl class="rows"><div><dt>燃えるとき</dt><dd>${esc(r.main.fire)}</dd></div><div class="plain"><dt>強み</dt><dd>${esc(r.main.strength)}</dd></div></dl></article>
+    <article class="job sub"><span class="tag">サブジョブ（予備タンク）</span>
+      <div class="id s">${sprite(r.sub.key)}<div><h3>${esc(r.sub.job)}</h3><p class="drive">${esc(r.sub.drive)}</p></div></div>
+      <p class="catch">${esc(r.sub.catch)}</p></article>
+    <div class="combo"><span class="k">MAIN × SUB</span><h3>${esc(r.type.name)}</h3><p>${esc(r.type.text)}</p>
+      <dl class="rows"><div><dt>電池が切れたときの給油方法</dt><dd>${esc(r.refuel)}</dd></div></dl></div>
+    <p class="px-note">電池が切れるときや、気をつけたいことは、1on1で一緒に見ていこな。</p>`;
+}
+
+/* ---------- カフェアポ道場（ロープレ） ---------- */
+
+async function dojo() {
+  const { cards } = await api('dojo_list');
+  app.innerHTML = `<div class="brand">カフェアポ道場</div>
+    <p class="note">カードを選んで、アポの練習をしよう。いま遊べるカードはピンクのやつ。ほかのカードも順番に増えていくで。</p>
+    <div class="cards">${cards.map(c => `<button class="cd${c.playable ? '' : ' off'}" data-no="${c.no}" ${c.playable ? '' : 'disabled'}>
+      <span class="no">No.${c.no}　${'★'.repeat(c.stars)}</span><span class="nm">${esc(c.name)} <small style="font-size:13px">${esc(c.age)}</small></span>
+      <span class="jb">${esc(c.job)}</span>
+      <span class="tag">${c.playable ? (c.count ? `ベスト ${c.best}点 <span class="rank-b">${esc(c.rank)}</span>` : 'まだ挑戦してへん') : '準備中'}</span></button>`).join('')}</div>`;
+  app.querySelectorAll('.cd[data-no]:not([disabled])').forEach(b => { b.onclick = () => play(Number(b.dataset.no)); });
+}
+
+const shuffle = a => { const b = a.slice(); for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
+
+async function play(no) {
+  spin();
+  const { card, scenes, products } = await api('dojo_card', { no });
+  const clamp = n => Math.max(0, Math.min(100, n));
+  let st;
+  const reset = () => { st = { step: -1, meter: 30, picks: [], order: scenes.map(s => shuffle(s.choices)), chosen: null, prods: new Set() }; render(); };
+  const meterHtml = () => `<div class="top"><span>心の開き具合</span><span class="meter-num">${Math.round(st.meter)}</span></div>
+    <div class="bar" role="progressbar" aria-label="心の開き具合" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(st.meter)}" style="height:14px"><i style="width:${st.meter}%"></i></div>`;
+  const render = () => {
+    if (st.step === -1) return start();
+    if (st.step < scenes.length) return scene();
+    if (st.step === scenes.length) return quiz();
+  };
+  const start = () => {
+    app.innerHTML = `<div class="brand">カフェアポ道場</div><div class="card">
+      <div class="hero"><div class="meta">No.${card.no}　難易度 ${'★'.repeat(card.stars)}</div><div class="name">${esc(card.name)}　${esc(card.age)}</div></div>
+      <dl class="info">${card.info.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
+      <p class="note">ここはカフェ。${esc(card.name)}が席に着いた。全${scenes.length}場面、返し方を選んで「心の開き具合」を上げよう。最後に、つなげられる商材も答えてな。</p>
+      <button class="go" id="start">アポ開始</button><button class="ghost" id="list">カード一覧にもどる</button></div>`;
+    document.getElementById('start').onclick = () => { st.step = 0; render(); };
+    document.getElementById('list').onclick = () => dojo();
+  };
+  const scene = () => {
+    const s = scenes[st.step];
+    const ch = st.chosen;
+    let body = `${meterHtml()}<p class="scene-label">${esc(s.label)}（${st.step + 1}/${scenes.length}）</p>
+      <div class="bubble"><b>${esc(card.name)}</b>　${esc(s.line)}<div class="act">（${esc(s.act)}）</div></div>`;
+    if (!ch) {
+      body += `<p class="note">どう返す？</p><div class="choices">${st.order[st.step].map((c, i) => `<button class="choice" data-id="${c.id}"><span class="k">${'ABC'[i]}</span><span>${esc(c.text)}</span></button>`).join('')}</div>`;
+    } else {
+      const low = ch.deep && st.meter < 60;
+      const cls = ch.d > 0 ? 'up' : ch.d < 0 ? 'down' : 'flat';
+      const sign = ch.d > 0 ? `メーター UP ${ch.d}` : ch.d < 0 ? `メーター DOWN ${-ch.d}` : 'メーター そのまま';
+      body += `<div class="you">${esc(ch.text)}</div><div class="bubble"><b>${esc(card.name)}</b>　${esc(low ? ch.replyLow : ch.reply)}</div>
+        <div class="fb ${cls}">${sign}　${esc(ch.fb)}${low ? '（まだ心が開ききってへんから、本音までは出てこんかった）' : ''}</div>
+        <button class="go" id="next">${st.step === scenes.length - 1 ? 'アポ終了' : '次へ'}</button>`;
+    }
+    app.innerHTML = `<div class="brand">カフェアポ道場</div><div class="card">${body}</div>`;
+    app.querySelectorAll('.choice').forEach(b => { b.onclick = () => {
+      const c = s.choices.find(x => x.id === b.dataset.id);
+      st.meter = clamp(st.meter + c.d);
+      st.picks[st.step] = c.id;
+      st.chosen = c;
+      render();
+    }; });
+    const nx = document.getElementById('next');
+    if (nx) nx.onclick = () => { st.chosen = null; st.step++; render(); top0(); };
+  };
+  const quiz = () => {
+    app.innerHTML = `<div class="brand">カフェアポ道場</div><div class="card">
+      <div class="hero"><div class="meta">アポおつかれさま！</div><div class="name" style="font-size:24px">商材クイズ</div></div>
+      <p>${esc(card.name)}につなげられる商材を、思いつくだけ全部タップしてな。</p>
+      <div class="prods">${products.map(p => `<button class="prod" data-p="${esc(p)}" aria-pressed="${st.prods.has(p)}">${esc(p)}</button>`).join('')}</div>
+      <p class="err" id="err" hidden>1つ以上選んでな</p><button class="go" id="done">採点する</button></div>`;
+    app.querySelectorAll('.prod').forEach(b => { b.onclick = () => {
+      const p = b.dataset.p;
+      st.prods.has(p) ? st.prods.delete(p) : st.prods.add(p);
+      b.setAttribute('aria-pressed', st.prods.has(p));
+      document.getElementById('err').hidden = true;
+    }; });
+    document.getElementById('done').onclick = async () => {
+      if (!st.prods.size) { document.getElementById('err').hidden = false; return; }
+      spin();
+      const { result: r } = await api('dojo_result', { no, picks: st.picks, prods: [...st.prods] });
+      if (!r) return fail('採点がうまくいかんかった。もう一回やってみてな。');
+      showResult(r);
+    };
+  };
+  const showResult = r => {
+    app.innerHTML = `<div class="brand">カフェアポ道場</div><div class="card">
+      <div class="score"><p class="note">${esc(card.name)}とのアポ</p><div class="big">${r.score}<small>点</small></div><span class="rank">ランク ${esc(r.rank)}</span></div>
+      <div class="top"><span>心の開き具合</span><span class="meter-num">${r.meter}</span></div><div class="bar" style="height:14px"><i style="width:${r.meter}%"></i></div>
+      <p class="sec">合格ポイント　${r.pass.filter(p => p.ok).length} / ${r.pass.length}</p>
+      <ul class="pts">${r.pass.map(p => `<li><span class="m ${p.ok ? 'ok' : 'ng'}">${p.ok ? '◯' : '✕'}</span><span>${esc(p.text)}<small>${esc(p.note)}</small></span></li>`).join('')}</ul>
+      <p class="sec">つなげられる商材</p>
+      <ul class="pts">${r.products.map(p => {
+        const ok = p.ok === p.picked;
+        const tag = p.ok ? (p.picked ? '言えた' : '言えへんかった') : '今回は入らへん';
+        return `<li><span class="m ${ok ? 'ok' : 'ng'}">${ok ? '◯' : '✕'}</span><span>${p.mark ? esc(p.mark) + ' ' : ''}${esc(p.name)}（${tag}）<small>${esc(p.why)}</small></span></li>`;
+      }).join('')}</ul>
+      <p class="sec">${esc(card.name)}の本当の悩み</p><div class="line-card">${esc(r.worry)}</div>
+      <p class="sec">よかった点</p><div>${esc(r.good)}</div>
+      <p class="sec">次に直す点</p><div>${esc(r.fix)}</div>
+      <p class="sec">次に試す一言</p><div class="line-card">${esc(r.line)}</div>
+      <div class="row2"><button class="go" id="again">もう1回</button><button class="ghost" id="list">カード一覧</button></div></div>`;
+    document.getElementById('again').onclick = () => { reset(); top0(); };
+    document.getElementById('list').onclick = () => { dojo(); top0(); };
+    top0();
+  };
+  reset();
+}
+
+/* ---------- 資料室（1ページずつ画像で表示。ダウンロードなし） ---------- */
+
+async function shiryo() {
+  const [{ docs }, { me }] = await Promise.all([api('docs_list'), api('me')]);
+  const list = () => {
+    app.innerHTML = `<div class="brand">資料室</div>` + (docs.length ? docs.map(d => `<div class="card doc">
+        <h3>${esc(d.title)}</h3>
+        <p class="small">${d.pages}ページ${d.chapters.length ? `・${d.chapters.length}章` : ''}${d.daily ? `・1日1章ずつ読めるで（いま${d.unlocked}ページまで）` : ''}</p>
+        <div class="bar"><i style="width:${d.pages ? Math.min(100, d.best / d.pages * 100) : 0}%"></i></div>
+        <div class="row2">${d.last > 1 ? `<button class="go" data-doc="${esc(d.id)}" data-page="${d.last}">続きから（${d.last}ページ）</button>` : ''}<button class="${d.last > 1 ? 'ghost' : 'go'}" data-doc="${esc(d.id)}" data-page="1">はじめから</button></div></div>`).join('')
+      : `<div class="card center"><p class="big-msg">まだ資料がないで</p><p class="note">資料が入ったら、ここに出てくるよ。</p></div>`);
+    app.querySelectorAll('[data-doc]').forEach(b => { b.onclick = () => view(docs.find(d => d.id === b.dataset.doc), Number(b.dataset.page)); });
+  };
+  const cache = {};
+  const load = (d, p, open) => {
+    const key = d.id + ':' + p;
+    if (!cache[key] || open === true) cache[key] = api('doc_page', { doc: d.id, page: p, open }).catch(() => null);
+    return cache[key];
+  };
+  const view = async (d, page) => {
+    let first = true;
+    const show = async p => {
+      page = p;
+      const r = await load(d, p, first ? true : false);
+      first = false;
+      const chapters = d.chapters.map((c, i) => `<option value="${c.start}" ${c.start <= p && (!d.chapters[i + 1] || d.chapters[i + 1].start > p) ? 'selected' : ''} ${c.start > (r && r.unlocked || d.unlocked) ? 'disabled' : ''}>${esc(c.title)}</option>`).join('');
+      const marks = Array.from({ length: 24 }, () => `<span>${esc(me.name || me.nick)}</span>`).join('');
+      app.innerHTML = `<div class="viewer-top"><button class="ghost" id="back" style="padding:6px 10px">◀ 一覧</button><span class="t">${esc(d.title)}</span>${chapters ? `<select id="ch" aria-label="章">${chapters}</select>` : ''}</div>
+        <div class="sheet" id="sheet" style="aspect-ratio:1/1.414">
+          ${r && r.img ? '' : `<div class="lock"><p class="big-msg">${r && r.error === 'locked' ? 'この先は明日' : '読めへんかった'}</p><p class="note">${r && r.error === 'locked' ? '1日1章ずつ読めるようになるで。また明日な！' : '電波のいいところで開き直してな。'}</p></div>`}
+          <div class="wm" aria-hidden="true">${marks}</div><div class="wm-corner">${esc(me.name || me.nick)}</div></div>
+        <div class="pager"><button id="prev" aria-label="前のページ" ${p <= 1 ? 'disabled' : ''}>◀</button><span class="pg">${p} / ${d.pages}</span><button id="next" aria-label="次のページ" ${p >= d.pages ? 'disabled' : ''}>▶</button></div>`;
+      const sheet = document.getElementById('sheet');
+      if (r && r.img) {
+        const im = new Image();
+        im.onload = () => { sheet.style.aspectRatio = `${im.naturalWidth}/${im.naturalHeight}`; };
+        im.src = r.img;
+        sheet.style.backgroundImage = `url("${r.img}")`;
+      }
+      sheet.oncontextmenu = e => e.preventDefault();
+      let x0 = null;
+      sheet.ontouchstart = e => { x0 = e.touches[0].clientX; };
+      sheet.ontouchend = e => { if (x0 === null) return; const dx = e.changedTouches[0].clientX - x0; x0 = null; if (dx < -50 && page < d.pages) show(page + 1); if (dx > 50 && page > 1) show(page - 1); };
+      document.getElementById('prev').onclick = () => show(page - 1);
+      document.getElementById('next').onclick = () => show(page + 1);
+      document.getElementById('back').onclick = () => { shiryo(); };
+      const ch = document.getElementById('ch');
+      if (ch) ch.onchange = () => show(Number(ch.value));
+      if (p < d.pages) load(d, p + 1, 'prefetch');
+      top0();
+    };
+    spin();
+    show(page);
+  };
+  list();
+}
+
+/* ---------- 起動 ---------- */
+
+const PAGES = { mypage: ['pop', mypage], shindan: ['pixel', shindan], dojo: ['pop', dojo], shiryo: ['pop', shiryo] };
+
+(async () => {
+  const [theme, run] = PAGES[PAGE] || PAGES.mypage;
+  document.body.dataset.theme = theme;
+  try {
+    await liff.init({ liffId: LIFF_ID });
+  } catch (e) { return fail('LINEの準備ができへんかった。LINEアプリから開き直してな。'); }
+  if (!liff.isLoggedIn()) return liff.login({ redirectUri: location.href });
+  try { await run(); } catch (e) { if (!(e instanceof Stop)) fail('うまく表示できへんかった。開き直してな。'); }
+})();
+</script>
+</body>
+</html>
