@@ -128,9 +128,6 @@ dl.info dt { color: var(--sub); font-weight: 700; } dl.info dd { margin: 0; min-
 .viewer-top select { font: inherit; font-size: 14px; border: 2px solid var(--line); border-radius: 10px; padding: 4px 6px; background: var(--card); color: var(--ink); max-width: 46%; }
 .sheet { position: relative; width: 100%; background: #fff center / contain no-repeat; border-radius: 10px; border: 2px solid var(--line); overflow: hidden;
   -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: pan-y; }
-.wm { position: absolute; inset: -20%; display: flex; flex-wrap: wrap; align-content: space-around; justify-content: space-around; transform: rotate(-24deg); pointer-events: none; }
-.wm span { font-size: 15px; font-weight: 700; color: rgba(58, 22, 38, .10); padding: 22px 18px; white-space: nowrap; }
-.wm-corner { position: absolute; right: 8px; bottom: 6px; font-size: 11px; font-weight: 700; color: rgba(58, 22, 38, .35); pointer-events: none; }
 .sheet .lock { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; background: var(--card); text-align: center; padding: 20px; }
 .pager { display: flex; align-items: center; gap: 8px; }
 .pager button { flex: none; width: 64px; height: 48px; border-radius: 14px; border: none; background: var(--pink); color: #fff; font-family: var(--num); font-size: 20px; }
@@ -463,11 +460,9 @@ async function shiryo() {
       const r = await load(d, p, first ? true : false);
       first = false;
       const chapters = d.chapters.map((c, i) => `<option value="${c.start}" ${c.start <= p && (!d.chapters[i + 1] || d.chapters[i + 1].start > p) ? 'selected' : ''} ${c.start > (r && r.unlocked || d.unlocked) ? 'disabled' : ''}>${esc(c.title)}</option>`).join('');
-      const marks = Array.from({ length: 24 }, () => `<span>${esc(me.name || me.nick)}</span>`).join('');
       app.innerHTML = `<div class="viewer-top"><button class="ghost" id="back" style="padding:6px 10px">◀ 一覧</button><span class="t">${esc(d.title)}</span>${chapters ? `<select id="ch" aria-label="章">${chapters}</select>` : ''}</div>
         <div class="sheet" id="sheet" style="aspect-ratio:1/1.414">
-          ${r && r.img ? '' : `<div class="lock"><p class="big-msg">${r && r.error === 'locked' ? 'この先は明日' : '読めへんかった'}</p><p class="note">${r && r.error === 'locked' ? '1日1章ずつ読めるようになるで。また明日な！' : '電波のいいところで開き直してな。'}</p></div>`}
-          <div class="wm" aria-hidden="true">${marks}</div><div class="wm-corner">${esc(me.name || me.nick)}</div></div>
+          ${r && r.img ? '' : `<div class="lock"><p class="big-msg">${r && r.error === 'locked' ? 'この先は明日' : '読めへんかった'}</p><p class="note">${r && r.error === 'locked' ? '1日1章ずつ読めるようになるで。また明日な！' : '電波のいいところで開き直してな。'}</p></div>`}</div>
         <div class="pager"><button id="prev" aria-label="前のページ" ${p <= 1 ? 'disabled' : ''}>◀</button><span class="pg">${p} / ${d.pages}</span><button id="next" aria-label="次のページ" ${p >= d.pages ? 'disabled' : ''}>▶</button></div>`;
       const sheet = document.getElementById('sheet');
       if (r && r.img) {
