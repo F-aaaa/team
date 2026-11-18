@@ -6,7 +6,7 @@
 <title>ロープレ道場</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&family=Dela+Gothic+One&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&family=Dela+Gothic+One&display=swap" media="print" onload="this.media='all'">
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
 /* スマホゲームの画面：余白を作らず、上にキャラ・下に大きな選択肢 */
@@ -104,7 +104,7 @@ h1, h2, h3, p { margin: 0; }
 .stage .ch { height: 92%; width: auto; position: relative; z-index: 1; transition: transform .3s; }
 .stage .hud { position: absolute; top: max(8px, env(safe-area-inset-top)); left: 10px; right: 10px; display: flex; justify-content: space-between; align-items: center; z-index: 3; font-weight: 800; font-size: 13px; }
 .stage .hud .pill { background: rgba(255,255,255,.85); border-radius: 99px; padding: 2px 10px; }
-.stage .say { position: absolute; left: 10px; right: 10px; bottom: 10px; z-index: 2; background: #fff; border-radius: 18px; padding: 10px 14px; font-size: 18px; font-weight: 800; box-shadow: 0 4px 16px rgba(0,0,0,.15); }
+.stage .say { position: absolute; left: 10px; right: 10px; bottom: 10px; z-index: 2; color: var(--ink, #222); background: #fff; border-radius: 18px; padding: 10px 14px; font-size: 18px; font-weight: 800; box-shadow: 0 4px 16px rgba(0,0,0,.15); }
 .stage .say .act { display: block; font-size: 12px; font-weight: 700; color: var(--sub); }
 .stage .say.me { background: #fff3c4; }
 .stage.cold { background: linear-gradient(#a9c2e8, #dfe9f7); }
@@ -211,7 +211,8 @@ const app = document.getElementById('app');
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const top0 = () => window.scrollTo(0, 0);
-const spin = () => { app.innerHTML = '<div class="spin" role="status" aria-label="読み込み中"></div>'; };
+let SEQ = 0; // 画面が描き変わるたびに増える（古い通信の結果で今の画面を上書きしないため）
+const spin = () => { SEQ++; app.innerHTML = '<div class="spin" role="status" aria-label="読み込み中"></div>'; };
 const STARS = n => n === 6 ? '四天王' : '★'.repeat(n);
 const ROOM = ['', '見習い', '一人前', '実力者', '達人', '伝説', '四天王'];
 let ADMIN = false;
@@ -221,15 +222,15 @@ async function api(name, data) {
   let res;
   try {
     res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(Object.assign({ api: name, idToken: liff.getIDToken() }, data || {})) });
-  } catch (e) { fail('通信がうまくいかんかった。電波のいいところで開き直してな。'); throw new Stop(); }
+  } catch (e) { fail('通信がうまくいかなかった。電波のいいところで開き直してね。'); throw new Stop(); }
   const j = await res.json();
   if (j.error === 'login') { liff.logout(); liff.login({ redirectUri: location.href }); throw new Stop(); }
-  if (j.gate && j.gate !== 'ok') { fail({ none: '公式LINEでの登録がすんでから使えるで。', wait: '確認がすんだら使えるようになるで。もう少し待っててな。', left: 'いまは使えない設定になってるで。' }[j.gate] || '開けへんかった'); throw new Stop(); }
-  if (j.error === 'server') { fail('サーバーでうまくいかんかった。少し時間をおいて開き直してな。'); throw new Stop(); }
+  if (j.gate && j.gate !== 'ok') { fail({ none: '公式LINEでの登録がすんでから使えるよ。', wait: '確認がすんだら使えるようになるよ。もう少し待っててね。', left: 'いまは使えない設定になってるよ。' }[j.gate] || '開けなかった'); throw new Stop(); }
+  if (j.error === 'server') { fail('サーバーでうまくいかなかった。少し時間をおいて開き直してね。'); throw new Stop(); }
   return j;
 }
 function fail(text) { app.innerHTML = `<div class="page"><div class="card" style="text-align:center;margin-top:20vh"><p style="font-size:24px;font-weight:800;color:var(--pink)">あれ？</p><p>${esc(text)}</p><button class="btn sub" onclick="home()">トップにもどる</button></div></div>`; }
-const page = html => { app.innerHTML = (ADMIN ? '<div class="admin-ribbon">確認モード（全部開いてる・司令室には記録しない）</div>' : '') + html; top0(); };
+const page = html => { SEQ++; app.innerHTML = (ADMIN ? '<div class="admin-ribbon">確認モード（全部開いてる・司令室には記録しない）</div>' : '') + html; top0(); };
 const on = (sel, fn) => app.querySelectorAll(sel).forEach(el => { el.onclick = e => fn(el, e); });
 
 /* ---------- キャラの絵（表情：normal・open・wary・down・win） ---------- */
@@ -276,9 +277,20 @@ const ch = (id, face, cls) => `<i data-ch="${esc(id)}" data-face="${face || 'nor
 
 /* ---------- トップ（入口4つ） ---------- */
 
+// トップは前回の内容をすぐ出して、裏で最新に入れ替える
+const homeKey = () => { try { return 'g_home:' + ((liff.getDecodedIDToken() || {}).sub || ''); } catch (e) { return 'g_home:'; } };
 async function home() {
-  spin();
+  let cached = null;
+  try { cached = JSON.parse(localStorage.getItem(homeKey()) || 'null'); } catch (e) { cached = null; }
+  if (cached) { try { drawHome(cached); } catch (e) { cached = null; } }
+  if (!cached) spin();
+  const shown = SEQ;
   const h = await api('g_home');
+  try { localStorage.setItem(homeKey(), JSON.stringify(h)); } catch (e) {}
+  if (SEQ !== shown) return; // その間に別の画面へ移っていたら描き直さない
+  drawHome(h);
+}
+function drawHome(h) {
   ADMIN = h.me.admin;
   const m = h.mission;
   let mis = '';
@@ -327,7 +339,7 @@ function alertCard(title, text, events) {
 function evHtml(evs) {
   return (evs || []).map(e => e.type === 'badge' ? `<div class="ev badge">🏅 バッジ「${esc(e.name)}」<span class="small" style="color:#fff">${esc(e.text)}</span></div>`
     : e.type === 'title' ? `<div class="ev title">👑 称号が「${esc(e.name)}」になった！</div>`
-    : e.type === 'mission' ? `<div class="mission${e.big ? ' big' : ''}"><span class="k">${e.big ? '大ミッション 解放！' : 'リアルミッション 解放！'}</span><p class="t">${esc(e.text)}</p>${e.why ? `<p class="small">${esc(e.why)}</p>` : ''}<p class="small">やったらトップの「やった！」を押してな</p></div>` : '').join('');
+    : e.type === 'mission' ? `<div class="mission${e.big ? ' big' : ''}"><span class="k">${e.big ? '大ミッション 解放！' : 'リアルミッション 解放！'}</span><p class="t">${esc(e.text)}</p>${e.why ? `<p class="small">${esc(e.why)}</p>` : ''}<p class="small">やったらトップの「やった！」を押してね</p></div>` : '').join('');
 }
 
 /* ---------- アポ道場 ---------- */
@@ -362,7 +374,7 @@ function charDetail(d, c) {
     <div class="detail c${c.star}">${ch(c.id, 'normal')}<span class="small" style="color:inherit">${STARS(c.star)}　${ROOM[c.star]}</span><h2>${esc(c.name)}</h2>
     <dl><dt>年齢</dt><dd>${c.age}歳</dd><dt>仕事</dt><dd>${esc(c.job)}</dd><dt>趣味</dt><dd>${esc(c.hobby)}</dd><dt>性格</dt><dd>${esc(c.per)}</dd>
     ${c.n ? `<dt>ベスト</dt><dd>${c.best}点（${esc(c.rank)}）・${c.n}回</dd>` : ''}</dl></div>
-    <p class="note">${c.star >= 3 ? '★3からは1問13秒。勝負どころは時間なし。' : '時間制限なし。じっくり選んでな。'}途中で正解は出ないで。相手の顔をよく見て。</p>
+    <p class="note">${c.star >= 3 ? '★3からは1問13秒。勝負どころは時間なし。' : '時間制限なし。じっくり選んでね。'}途中で正解は出ないで。相手の顔をよく見て。</p>
     <button class="btn" id="go">アポ開始</button></div>`);
   mountChars();
   document.getElementById('back').onclick = () => room(d, c.star);
@@ -372,11 +384,11 @@ function charDetail(d, c) {
 async function apoPlay(id, list) {
   spin();
   const g = await api('g_apo_start', { id });
-  if (g.error) return fail(g.error === 'locked' ? 'この部屋はまだ開いてへんで。' : 'この人はまだ準備中やで。');
+  if (g.error) return fail(g.error === 'locked' ? 'この部屋はまだ開いていないよ。' : 'この人はまだ準備中だよ。');
   const c = g.char, boss = c.star === 6;
   let heart = g.open, at = g.start, picks = [];
   if (boss) {
-    page(`<div class="vs">${ch(c.id, 'wary')}<span class="mark">VS</span><b>${esc(c.name)}</b><p>${esc(g.intro)}</p><p class="small" style="color:#ddd">四天王は「倒す相手」じゃない。「心でつながる相手」や。</p><button class="btn" id="go" style="max-width:300px">はじめる</button></div>`);
+    page(`<div class="vs">${ch(c.id, 'wary')}<span class="mark">VS</span><b>${esc(c.name)}</b><p>${esc(g.intro)}</p><p class="small" style="color:#ddd">四天王は「倒す相手」じゃない。「心でつながる相手」だよ。</p><button class="btn" id="go" style="max-width:300px">はじめる</button></div>`);
     mountChars();
     await new Promise(r => { document.getElementById('go').onclick = r; });
   }
@@ -443,7 +455,7 @@ async function apoPlay(id, list) {
   play.classList.remove('big-scene');
   spin();
   const r = await api('g_apo_result', { id, picks });
-  if (r.error) return fail('採点がうまくいかんかった。もう一回やってみてな。');
+  if (r.error) return fail('採点がうまくいかなかった。もう一回やってみてね。');
   apoResultView(c, r, list);
 }
 
@@ -455,7 +467,7 @@ function apoResultView(c, r, list) {
     ${evHtml(r.events)}
     <div class="card"><div class="split"><span>やり方</span><div class="b"><i style="width:${r.method / r.wm * 100}%"></i></div><span>${r.method}/${r.wm}</span>
       <span>想い</span><div class="b h"><i style="width:${r.heart / r.wh * 100}%"></i></div><span>${r.heart}/${r.wh}</span></div>
-      ${r.boss && !r.conn ? `<p class="small">${r.score >= 80 ? '点は高い。でも、本物の想いが届いてへん。理屈だけではつながれへんで。' : 'Aランク以上で、しかも勝負どころで本物の想いを届けると「心でつながった！」になるで。'}</p>` : ''}</div>
+      ${r.boss && !r.conn ? `<p class="small">${r.score >= 80 ? '点は高い。でも、本物の想いが届いていない。理屈だけではつながれないよ。' : 'Aランク以上で、しかも勝負どころで本物の想いを届けると「心でつながった！」になるよ。'}</p>` : ''}</div>
     ${r.moved ? `<div class="card"><h2>心が動いた一言</h2><div class="line-card">${esc(r.moved)}</div></div>` : ''}
     <div class="card"><h2>よかった点</h2><p>${esc(r.good)}</p><h2>次に直す点</h2><p>${esc(r.fix)}</p><h2>次に試す一言</h2><div class="line-card">${esc(r.tryLine)}</div>
       <h2>${esc(c.name)}の本当の悩み</h2><p>${esc(r.worry)}</p></div>
@@ -476,7 +488,7 @@ async function lineRooms() {
   spin();
   const d = await api('g_line_list');
   page(`<div class="page"><div class="bar-top"><button class="back" id="back">◀</button><h1>LINE道場</h1></div>
-    <p class="note">ゴールは相手がはっきり「行く」と決めること。断られても、笑って終われたらクリアやで。</p>
+    <p class="note">ゴールは相手がはっきり「行く」と決めること。断られても、笑って終われたらクリアだよ。</p>
     ${d.stars.map(s => `<div class="card" style="${s.open ? '' : 'opacity:.5'}"><h2>${STARS(s.star)} ${s.open ? '' : '🔒 前の★を全員クリアで開く'}</h2>
       <div class="grid">${s.chars.map(c => `<button class="pc c${s.star}${c.ready ? '' : ' prep'}" data-pick="${c.id}" ${s.open && c.ready ? '' : 'disabled'}>
         ${c.rank ? `<span class="rk">${c.rank}</span>` : ''}${ch(c.id, 'normal')}<b>${esc(c.name)}</b><small>${esc(c.rel)}</small>${c.ready ? '' : '<small>準備中</small>'}</button>`).join('')}</div></div>`).join('')}</div>`);
@@ -488,7 +500,7 @@ async function lineRooms() {
 async function linePlay(id) {
   spin();
   const g = await api('g_line_start', { id });
-  if (g.error) return fail('まだ開いてへんで。');
+  if (g.error) return fail('まだ開いていないよ。');
   const c = g.char;
   page(`<div class="talk"><div class="talk-head"><button class="back" id="back" style="background:none;border:none;color:#fff">◀</button>${ch(c.id, 'normal')}<div><b>${esc(c.name)}</b><span>${esc(c.rel)}・${esc(c.dist)}</span></div></div>
     <div class="msgs" id="msgs"><div class="sys">${esc(c.name)}（${esc(c.rel)}）を飲み会に誘おう</div></div><div class="timer" id="timer" hidden><i></i></div><div class="choices" id="chs"></div></div>`);
@@ -503,7 +515,7 @@ async function linePlay(id) {
     const n = g.nodes[at];
     if (n.end) break;
     if (n.say && n.say.length) { await sleep(500); you(n.say[Math.floor(Math.random() * n.say.length)]); }
-    chs.innerHTML = n.ch.map((x, i) => `<button class="choice${x.act ? ' act' : ''}" data-k="${i}">${x.act ? '⏳ ' : ''}${esc(x.text)}</button>`).join('');
+    chs.innerHTML = n.ch.map((x, i) => i).sort(() => Math.random() - .5).map(i => { const x = n.ch[i]; return `<button class="choice${x.act ? ' act' : ''}" data-k="${i}">${x.act ? '⏳ ' : ''}${esc(x.text)}</button>`; }).join('');
     scroll();
     const k = await new Promise(res => {
       on('[data-k]', b => res(Number(b.dataset.k)));
@@ -537,7 +549,7 @@ async function linePlay(id) {
   }
   chs.innerHTML = '<p class="tap">採点中…</p>';
   const r = await api('g_line_result', { id, mood: g.mood, token: g.token, picks });
-  if (r.error) return fail('採点がうまくいかんかった。もう一回やってみてな。');
+  if (r.error) return fail('採点がうまくいかなかった。もう一回やってみてね。');
   page(`<div class="page">
     <div class="score"><p class="note">${esc(c.name)}へのお誘い</p><p style="font-weight:800">${esc(r.endName)}</p><div class="n">${r.score}<small>点</small></div><span class="rank ${r.rank}">${r.rank}</span></div>
     ${evHtml(r.events)}
@@ -563,7 +575,7 @@ async function drill() {
     <div class="dots">${d.qs.map((q, j) => `<i class="${j < res.length ? (res[j] ? 'ok' : 'ng') : j === i ? 'now' : ''}"></i>`).join('')}</div>`;
   const finish = (sum, ev) => {
     page(`<div class="page">${header()}<div class="score"><p class="note">今日の5問</p><div class="n">${sum ? sum.score : d.score}<small>点</small></div><p style="font-weight:800">🔥 連続${sum ? sum.streak : d.streak}日</p></div>
-      ${evHtml(ev)}<p class="note" style="text-align:center">間違えた問題は、次の日に優先して出るで。3回連続正解で「覚えた」になるよ。</p><button class="btn" id="home">トップへ</button></div>`);
+      ${evHtml(ev)}<p class="note" style="text-align:center">間違えた問題は、次の日に優先して出るよ。3回連続正解で「覚えた」になるよ。</p><button class="btn" id="home">トップへ</button></div>`);
     document.getElementById('back').onclick = home; document.getElementById('home').onclick = home;
   };
   if (d.done) return finish(null, []);
@@ -582,16 +594,32 @@ async function drill() {
     const answer = async k => {
       if (done) return; done = true; clearTimeout(t);
       app.querySelectorAll('.opt').forEach(b => { b.disabled = true; });
-      const r = await api('g_drill_answer', { qid: q.id, pick: k });
-      if (r.error) return fail('うまく届かんかった。開き直してな。');
-      res.push(r.ok ? 1 : 0);
-      app.querySelectorAll('.opt').forEach(b => { const n = Number(b.dataset.k); if (n === r.a) b.classList.add('ok'); else if (n === k) b.classList.add('ng'); });
-      const card = r.card ? `<div class="ref ${r.card.stage}" style="margin-top:6px"><span class="rr">${r.card.isNew ? '🆕 断り文句カード ゲット！' : `断り文句カード ${r.card.n}回目${r.card.stage ? `（${r.card.stage}）` : ''}`}</span><b>「${esc(r.card.text)}」</b><span>${esc(r.card.best)}</span></div>` : '';
-      const fb = document.createElement('div');
-      fb.className = 'fb pop ' + (r.ok ? 'ok' : 'ng');
-      fb.innerHTML = `<b>${r.ok ? '◯ 正解！' : k === -1 ? '⏰ 時間切れ' : '✕ ざんねん'}</b>${esc(r.why)}${r.memorized ? '<p style="color:var(--good)">「覚えた」になった！</p>' : ''}${card}<button class="btn" id="nx" style="margin-top:8px">${i + 1 < d.qs.length ? '次の問題' : '結果を見る'}</button>`;
-      app.querySelector('.page').appendChild(fb); fb.scrollIntoView({ behavior: 'smooth', block: 'end' });
-      document.getElementById('nx').onclick = () => { i++; if (i < d.qs.length) ask(); else finish(r.summary, r.events); };
+      const local = typeof q.a === 'number';
+      const show = r => {
+        res.push(r.ok ? 1 : 0);
+        app.querySelectorAll('.opt').forEach(b => { const n = Number(b.dataset.k); if (n === r.a) b.classList.add('ok'); else if (n === k) b.classList.add('ng'); });
+        const fb = document.createElement('div');
+        fb.className = 'fb pop ' + (r.ok ? 'ok' : 'ng');
+        const last = i + 1 >= d.qs.length;
+        fb.innerHTML = `<b>${r.ok ? '◯ 正解！' : k === -1 ? '⏰ 時間切れ' : '✕ ざんねん'}</b>${esc(r.why)}<div class="extra"></div><button class="btn" id="nx" style="margin-top:8px">${last ? '結果を見る' : '次の問題へ'}</button>`;
+        app.querySelector('.page').appendChild(fb); fb.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        return fb;
+      };
+      const extra = (fb, r) => {
+        const card = r.card ? `<div class="ref ${r.card.stage}" style="margin-top:6px"><span class="rr">${r.card.isNew ? '🆕 断り文句カード ゲット！' : `断り文句カード ${r.card.n}回目${r.card.stage ? `（${r.card.stage}）` : ''}`}</span><b>「${esc(r.card.text)}」</b></div>` : '';
+        const box = fb.querySelector('.extra'); if (box) box.innerHTML = (r.memorized ? '<p style="color:var(--good)">「覚えた」になった！</p>' : '') + card;
+      };
+      const sent = (drill.q = (drill.q || Promise.resolve()).then(() => api('g_drill_answer', { qid: q.id, pick: k })).catch(() => ({ error: 'net' })));
+      let fb, r;
+      if (local) { r = { ok: k === q.a, a: q.a, why: q.why || '' }; fb = show(r); sent.then(x => { if (!x.error) extra(fb, x); }); }
+      else { r = await sent; if (r.error) return fail('うまく届かなかった。開き直してね。'); fb = show(r); extra(fb, r); }
+      document.getElementById('nx').onclick = async () => {
+        i++;
+        if (i < d.qs.length) return ask();
+        const b = document.getElementById('nx'); b.disabled = true; b.textContent = '集計中…';
+        const x = await sent; if (x.error) return fail('うまく届かなかった。開き直してね。');
+        finish(x.summary, x.events);
+      };
     };
     on('.opt', b => answer(Number(b.dataset.k)));
     const t = setTimeout(() => answer(-1), 30000);
@@ -605,7 +633,7 @@ async function kan() {
   spin();
   const d = await api('g_kan_info');
   page(`<div class="page"><div class="bar-top"><button class="back" id="back">◀</button><h1>完コピテスト</h1>${d.badge ? `<span class="chip">完コピ${d.badge}</span>` : ''}</div>
-    <div class="card"><p style="font-weight:800">${d.lap + 1}周目　いまDAY${d.reach}まで読んだ</p><p class="small">資料室の「アポ完コピ台本」で読み進めたDAYまでと、前のDAYの復習が出るで。1回10問・90点以上でそのDAYをCLEAR。3周で完コピバッジ金。</p>
+    <div class="card"><p style="font-weight:800">${d.lap + 1}周目　いまDAY${d.reach}まで読んだ</p><p class="small">資料室の「アポ完コピ台本」で読み進めたDAYまでと、前のDAYの復習が出るよ。1回10問・90点以上でそのDAYをCLEAR。3周で完コピバッジ金。</p>
       <div class="days">${Array.from({ length: d.total }, (_, k) => k + 1).map(n => { const has = d.days.find(x => x.day === n); return `<span class="day${d.clear[n] ? ' clear' : has && has.open ? ' open' : ''}${n === d.target ? ' target' : ''}">${n}<small>${d.clear[n] ? 'CLEAR' : has ? '' : '準備中'}</small></span>`; }).join('')}</div></div>
     ${d.days.filter(x => x.open).map(x => `<button class="btn ${x.day === d.target ? '' : 'sub'}" data-day="${x.day}">DAY${x.day}　${esc(x.title)}${d.clear[x.day] ? '　✓' : ''}</button>`).join('')}
     ${d.reach >= 23 ? '<button class="btn sub" data-day="99">23DAY総まとめテスト（一字一句）</button>' : ''}</div>`);
@@ -616,7 +644,7 @@ async function kan() {
 async function kanTest(day) {
   spin();
   const t = await api('g_kan_start', { day });
-  if (t.error) return fail('このDAYはまだ読んでへんみたい。資料室で読んでからやってな。');
+  if (t.error) return fail('このDAYはまだ読んでいないみたい。資料室で読んでからやってね。');
   const ans = {};
   let i = 0;
   const show = () => {
@@ -624,7 +652,7 @@ async function kanTest(day) {
     const label = { fill: '穴埋め', order: '並べ替え', type: '打ち込み' }[q.t];
     let body = '';
     if (q.t === 'fill') body = `<div class="choices" style="padding:0;background:none">${q.opts.map(o => `<button class="choice" data-o="${esc(o)}">${esc(o)}</button>`).join('')}</div>`;
-    if (q.t === 'order') body = `<p class="small">正しい順にタップしてな</p><div class="ord" id="ord">${q.items.map(o => `<button class="choice" data-k="${o.k}"><span class="num"></span>${esc(o.x)}</button>`).join('')}</div><div class="row"><button class="btn sub" id="reset">やり直す</button><button class="btn" id="ok" disabled>決定</button></div>`;
+    if (q.t === 'order') body = `<p class="small">正しい順にタップしてね</p><div class="ord" id="ord">${q.items.map(o => `<button class="choice" data-k="${o.k}"><span class="num"></span>${esc(o.x)}</button>`).join('')}</div><div class="row"><button class="btn sub" id="reset">やり直す</button><button class="btn" id="ok" disabled>決定</button></div>`;
     if (q.t === 'type') body = `${q.hint ? `<p class="small">ヒント：${esc(q.hint)}</p>` : ''}<input class="type" id="tx" autocomplete="off" placeholder="ここに打ち込む"><button class="btn" id="ok">決定</button>`;
     page(`<div class="page"><div class="bar-top"><button class="back" id="back">◀</button><h1>${esc(t.final ? t.title : `DAY${t.day}`)}</h1><span class="chip">${i + 1}/${t.qs.length}</span></div>
       <div class="q-card"><span class="small" style="font-weight:800;color:#5b3fd6">${label}</span><p class="q-say">${esc(q.q)}</p></div>${body}</div>`);
@@ -643,7 +671,7 @@ async function kanTest(day) {
   const submit = async () => {
     spin();
     const r = await api('g_kan_result', { answers: ans });
-    if (r.error) return fail('採点がうまくいかんかった。もう一回やってみてな。');
+    if (r.error) return fail('採点がうまくいかなかった。もう一回やってみてね。');
     page(`<div class="page"><div class="score"><p class="note">${r.final ? '総まとめテスト' : `DAY${r.day}`}</p><div class="n">${r.score}<small>点</small></div>${r.clear ? '<span class="rank S">CLEAR!</span>' : '<p class="small">90点以上でCLEAR</p>'}</div>
       ${r.lapUp ? `<div class="ev room pop">🎉 台本を${r.lap}周！</div>` : ''}${evHtml(r.events)}
       <div class="card">${r.review.map((x, k) => `<div class="rv"><span class="q"><span class="mk ${x.ok ? 'ok' : 'ng'}">${x.ok ? '◯' : '✕'}</span> ${k + 1}. ${esc(x.q)}</span>${x.mine ? `<span class="m">あなた：${esc(x.mine)}</span>` : ''}${x.ok ? '' : `<span class="b">こたえ：${esc(x.right)}</span>`}${x.keys.length && !x.ok ? `<span class="w">大事なキーワード：${x.keys.map(esc).join('・')}</span>` : ''}</div>`).join('')}</div>
@@ -681,9 +709,9 @@ async function zukan(tab) {
 /* ---------- 起動 ---------- */
 
 (async () => {
-  try { await liff.init({ liffId: LIFF_ID }); } catch (e) { return fail('LINEの準備ができへんかった。LINEアプリから開き直してな。'); }
+  try { await liff.init({ liffId: LIFF_ID }); } catch (e) { return fail('LINEの準備ができなかった。LINEアプリから開き直してね。'); }
   if (!liff.isLoggedIn()) return liff.login({ redirectUri: location.href });
-  try { await home(); } catch (e) { if (!(e instanceof Stop)) { console.error(e); fail('うまく表示できへんかった。開き直してな。'); } }
+  try { await home(); } catch (e) { if (!(e instanceof Stop)) { console.error(e); fail('うまく表示できなかった。開き直してね。'); } }
 })();
 window.addEventListener('unhandledrejection', e => { if (!(e.reason instanceof Stop)) console.error(e.reason); });
 </script>
