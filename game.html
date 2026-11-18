@@ -374,7 +374,7 @@ function charDetail(d, c) {
     <div class="detail c${c.star}">${ch(c.id, 'normal')}<span class="small" style="color:inherit">${STARS(c.star)}　${ROOM[c.star]}</span><h2>${esc(c.name)}</h2>
     <dl><dt>年齢</dt><dd>${c.age}歳</dd><dt>仕事</dt><dd>${esc(c.job)}</dd><dt>趣味</dt><dd>${esc(c.hobby)}</dd><dt>性格</dt><dd>${esc(c.per)}</dd>
     ${c.n ? `<dt>ベスト</dt><dd>${c.best}点（${esc(c.rank)}）・${c.n}回</dd>` : ''}</dl></div>
-    <p class="note">${c.star >= 3 ? '★3からは1問13秒。勝負どころは時間なし。' : '時間制限なし。じっくり選んでね。'}途中で正解は出ないで。相手の顔をよく見て。</p>
+    <p class="note">${c.star >= 3 ? '★3からは1問13秒。勝負どころは時間なし。' : '時間制限なし。じっくり選んでね。'}途中で正解は出ないよ。相手の顔をよく見て。</p>
     <button class="btn" id="go">アポ開始</button></div>`);
   mountChars();
   document.getElementById('back').onclick = () => room(d, c.star);
