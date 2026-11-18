@@ -6,7 +6,7 @@
 <title>チームのページ</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&family=M+PLUS+Rounded+1c:wght@500;700;800&family=Press+Start+2P&family=Dela+Gothic+One&family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&family=M+PLUS+Rounded+1c:wght@500;700;800&family=Press+Start+2P&family=Dela+Gothic+One&family=Zen+Maru+Gothic:wght@500;700&display=swap" media="print" onload="this.media='all'">
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
 /* 2つの見た目：pop（マイページ・資料室・ロープレ）と pixel（原動力ジョブ診断。元のドット絵デザインのまま） */
@@ -210,11 +210,11 @@ async function api(name, data) {
   let res;
   try {
     res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(Object.assign({ api: name, idToken: liff.getIDToken() }, data || {})) });
-  } catch (e) { fail('通信がうまくいかんかった。電波のいいところで開き直してな。'); throw new Stop(); }
+  } catch (e) { fail('通信がうまくいかなかった。電波のいいところで開き直してね。'); throw new Stop(); }
   const j = await res.json();
   if (j.error === 'login') { liff.logout(); liff.login({ redirectUri: location.href }); throw new Stop(); }
   if (j.gate && j.gate !== 'ok') { gate(j.gate); throw new Stop(); }
-  if (j.error === 'server') { fail('サーバーでうまくいかんかった。少し時間をおいて開き直してな。'); throw new Stop(); }
+  if (j.error === 'server') { fail('サーバーでうまくいかなかった。少し時間をおいて開き直してね。'); throw new Stop(); }
   return j;
 }
 
@@ -226,10 +226,10 @@ function fail(text) {
 
 function gate(kind) {
   const t = {
-    none: ['メンバー専用です', '公式LINEでの登録がすんでから使えるで。トークで何か送ると登録がはじまるよ。'],
-    wait: ['承認待ちです', '登録ありがとう！ 確認がすんだら使えるようになるで。もう少し待っててな。'],
-    left: ['このページは使えません', 'いまは使えない設定になってるで。']
-  }[kind] || ['開けへんかった', ''];
+    none: ['メンバー専用です', '公式LINEでの登録がすんでから使えるよ。トークで何か送ると登録がはじまるよ。'],
+    wait: ['承認待ちです', '登録ありがとう！ 確認がすんだら使えるようになるよ。もう少し待っててね。'],
+    left: ['このページは使えません', 'いまは使えない設定になってるよ。']
+  }[kind] || ['開けなかった', ''];
   app.innerHTML = document.body.dataset.theme === 'pixel'
     ? `<div class="gate"><p class="pixel">${t[0]}</p><p style="color:var(--muted)">${t[1]}</p></div>`
     : `<div class="card center"><p class="big-msg">${t[0]}</p><p class="note">${t[1]}</p></div>`;
@@ -242,22 +242,22 @@ async function mypage() {
   const lvNow = me.lv || 0;
   const nums = mp.month.items.map(x => `<div class="num${x.done ? ' done' : ''}">${x.done ? '<span class="ok">✓</span>' : ''}
     <div class="k">${esc(x.name)}</div><div class="v">${x.now}<small>/ ${x.goal == null ? 'ー' : x.goal}${esc(x.unit)}</small></div></div>`).join('');
-  const goalNote = mp.month.goalFrom === '今月' ? '' : `<p class="small">今月の目標がまだやから、${mp.month.goalFrom === '先月と同じ' ? '先月の目標' : '目安の数字'}で表示してるで。</p>`;
+  const goalNote = mp.month.goalFrom === '今月' ? '' : `<p class="small">今月の目標がまだだから、${mp.month.goalFrom === '先月と同じ' ? '先月の目標' : '目安の数字'}で表示してるよ。</p>`;
   const lvCard = mp.level.next ? `<div class="card"><h2>Lv${mp.level.next}まで</h2><ul class="checks">${mp.level.checks.map(c => c.manual
       ? `<li><span class="m">・</span><div>${esc(c.text)}<div class="small">1on1で一緒に確認しよう</div></div></li>`
       : `<li><span class="m${c.done ? ' on' : ''}">${c.done ? '✓' : '・'}</span><div>${esc(c.text)}<div class="small">${Math.min(c.now, c.need)} / ${c.need}</div><div class="bar"><i style="width:${Math.min(100, c.now / c.need * 100)}%"></i></div></div></li>`).join('')}</ul></div>`
-    : `<div class="card"><h2>最高レベル</h2><p>Lv5！ ここからはチームを引っぱる番やで。</p></div>`;
+    : `<div class="card"><h2>最高レベル</h2><p>Lv5！ ここからはチームを引っぱる番だよ。</p></div>`;
   const sh = mp.shindan;
   const shCard = sh ? `<div class="card"><h2>あなたの原動力</h2>
       <div class="jobline">${sprite(sh.main.key)}<div><span class="small">メイン</span><b>${esc(sh.main.job)}</b><span class="small">${esc(sh.main.catch)}</span></div></div>
       <div class="jobline">${sprite(sh.sub.key)}<div><span class="small">サブ</span><b>${esc(sh.sub.job)}</b><span class="small">${esc(sh.sub.catch)}</span></div></div>
       <p class="small">タイプ：${esc(sh.type.name)}</p><button class="ghost" data-go="shindan">結果をくわしく見る</button></div>`
-    : `<div class="card"><h2>あなたの原動力</h2><p>まだ診断してへんで。24問・約5分で、自分を動かすエンジンが分かるよ。</p><button class="go" data-go="shindan">診断をはじめる</button></div>`;
+    : `<div class="card"><h2>あなたの原動力</h2><p>まだ診断していないよ。24問・約5分で、自分を動かすエンジンが分かるよ。</p><button class="go" data-go="shindan">診断をはじめる</button></div>`;
   const gm = mp.game;
   const gameCard = gm ? `<div class="card"><h2>ロープレ</h2><p><span class="rank-b">${esc(gm.title)}</span>　🔥連続${gm.streak}日・勇気メダル${gm.medals}枚</p>
       <p class="small">図鑑：人物${gm.zukan.people[0]}/${gm.zukan.people[1]}・断り文句${gm.zukan.refs[0]}/${gm.zukan.refs[1]}・技${gm.zukan.waza[0]}/${gm.zukan.waza[1]}</p>
       ${gm.badges.length ? `<p class="small">バッジ：${gm.badges.map(b => esc(b.name)).join('・')}</p>` : ''}<button class="go" data-go="dojo">ロープレ道場へ</button></div>` : '';
-  const recs = mp.dojo.length ? `<ul class="recs">${mp.dojo.map(r => `<li><span>No.${r.no} ${esc(r.name)}<span class="small">（${r.count}回）</span></span><span>${r.best}点 <span class="rank-b">${esc(r.rank)}</span></span></li>`).join('')}</ul>` : '<p class="note">まだ挑戦してへんで。</p>';
+  const recs = mp.dojo.length ? `<ul class="recs">${mp.dojo.map(r => `<li><span>No.${r.no} ${esc(r.name)}<span class="small">（${r.count}回）</span></span><span>${r.best}点 <span class="rank-b">${esc(r.rank)}</span></span></li>`).join('')}</ul>` : '<p class="note">まだ挑戦していないよ。</p>';
   app.innerHTML = `
     <div class="brand">MY PAGE</div>
     <header class="mp-head"><h1>${esc(me.nick)}</h1><div class="lv"><small>Lv</small>${lvNow}</div></header>
@@ -275,15 +275,15 @@ async function shindan() {
   const hero = `<header class="px-hero"><p class="eyebrow">SELF-DRIVE LAB</p><h1>原動力ジョブ診断</h1>
     <div class="party" aria-hidden="true">${Object.keys(JC).map(k => `<div class="pc" style="--jc:${JC[k]}">${spr(k)}<span>${JOB_NAMES[k]}</span></div>`).join('')}</div></header>`;
   if (j.taken) {
-    app.innerHTML = hero + `<div class="gate"><p class="pixel">受験済みです</p><p style="color:var(--muted)">あなたの結果はこれやで。</p></div>` + resultHtml(j.result);
+    app.innerHTML = hero + `<div class="gate"><p class="pixel">受験済みです</p><p style="color:var(--muted)">あなたの結果はこれだよ。</p></div>` + resultHtml(j.result);
     return;
   }
   const qs = j.questions, labels = j.labels;
   const ans = Array(qs.length).fill(0);
   let i = 0;
   const intro = () => {
-    app.innerHTML = hero + `<p class="lead" style="color:var(--muted)">${qs.length}の質問に答えると、あなたを動かす8つの原動力のうち、いちばん強い2つ（メインジョブとサブジョブ）が分かるで。「こうありたい」やなくて、今のふだんの自分に近いほうを選んでな。</p>
-      <p class="px-note">結果（名前・ジョブ・点数）は、ふみと大輔だけに届くで。受けられるのは1回だけ。</p>
+    app.innerHTML = hero + `<p class="lead" style="color:var(--muted)">${qs.length}の質問に答えると、あなたを動かす8つの原動力のうち、いちばん強い2つ（メインジョブとサブジョブ）が分かるよ。「こうありたい」じゃなくて、今のふだんの自分に近いほうを選んでね。</p>
+      <p class="px-note">結果（名前・ジョブ・点数）は、ふみと大輔だけに届くよ。受けられるのは1回だけ。</p>
       <button class="px-btn primary" id="start">はじめる（約5分）</button>`;
     document.getElementById('start').onclick = () => { i = 0; ask(); };
   };
@@ -309,7 +309,7 @@ async function shindan() {
     document.getElementById('send').onclick = async () => {
       spin();
       const r = await api('shindan_submit', { answers: ans });
-      if (r.error) return fail('答えがうまく届かんかった。もう一回開き直してな。');
+      if (r.error) return fail('答えがうまく届かなかった。もう一回開き直してね。');
       app.innerHTML = hero + resultHtml(r.result);
       top0();
     };
@@ -340,7 +340,7 @@ async function dojo() {
     <div class="cards">${cards.map(c => `<button class="cd${c.playable ? '' : ' off'}" data-no="${c.no}" ${c.playable ? '' : 'disabled'}>
       <span class="no">No.${c.no}　${'★'.repeat(c.stars)}</span><span class="nm">${esc(c.name)} <small style="font-size:13px">${esc(c.age)}</small></span>
       <span class="jb">${esc(c.job)}</span>
-      <span class="tag">${c.playable ? (c.count ? `ベスト ${c.best}点 <span class="rank-b">${esc(c.rank)}</span>` : 'まだ挑戦してへん') : '準備中'}</span></button>`).join('')}</div>`;
+      <span class="tag">${c.playable ? (c.count ? `ベスト ${c.best}点 <span class="rank-b">${esc(c.rank)}</span>` : 'まだ挑戦していない') : '準備中'}</span></button>`).join('')}</div>`;
   app.querySelectorAll('.cd[data-no]:not([disabled])').forEach(b => { b.onclick = () => play(Number(b.dataset.no)); });
 }
 
@@ -363,7 +363,7 @@ async function play(no) {
     app.innerHTML = `<div class="brand">カフェアポ道場</div><div class="card">
       <div class="hero"><div class="meta">No.${card.no}　難易度 ${'★'.repeat(card.stars)}</div><div class="name">${esc(card.name)}　${esc(card.age)}</div></div>
       <dl class="info">${card.info.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
-      <p class="note">ここはカフェ。${esc(card.name)}が席に着いた。全${scenes.length}場面、返し方を選んで「心の開き具合」を上げよう。最後に、つなげられる商材も答えてな。</p>
+      <p class="note">ここはカフェ。${esc(card.name)}が席に着いた。全${scenes.length}場面、返し方を選んで「心の開き具合」を上げよう。最後に、つなげられる商材も答えてね。</p>
       <button class="go" id="start">アポ開始</button><button class="ghost" id="list">カード一覧にもどる</button></div>`;
     document.getElementById('start').onclick = () => { st.step = 0; render(); };
     document.getElementById('list').onclick = () => dojo();
@@ -380,7 +380,7 @@ async function play(no) {
       const cls = ch.d > 0 ? 'up' : ch.d < 0 ? 'down' : 'flat';
       const sign = ch.d > 0 ? `メーター UP ${ch.d}` : ch.d < 0 ? `メーター DOWN ${-ch.d}` : 'メーター そのまま';
       body += `<div class="you">${esc(ch.text)}</div><div class="bubble"><b>${esc(card.name)}</b>　${esc(low ? ch.replyLow : ch.reply)}</div>
-        <div class="fb ${cls}">${sign}　${esc(ch.fb)}${low ? '（まだ心が開ききってへんから、本音までは出てこんかった）' : ''}</div>
+        <div class="fb ${cls}">${sign}　${esc(ch.fb)}${low ? '（まだ心が開ききっていないから、本音までは出てこなかった）' : ''}</div>
         <button class="go" id="next">${st.step === scenes.length - 1 ? 'アポ終了' : '次へ'}</button>`;
     }
     app.innerHTML = `<div class="brand">カフェアポ道場</div><div class="card">${body}</div>`;
@@ -397,9 +397,9 @@ async function play(no) {
   const quiz = () => {
     app.innerHTML = `<div class="brand">カフェアポ道場</div><div class="card">
       <div class="hero"><div class="meta">アポおつかれさま！</div><div class="name" style="font-size:24px">商材クイズ</div></div>
-      <p>${esc(card.name)}につなげられる商材を、思いつくだけ全部タップしてな。</p>
+      <p>${esc(card.name)}につなげられる商材を、思いつくだけ全部タップしてね。</p>
       <div class="prods">${products.map(p => `<button class="prod" data-p="${esc(p)}" aria-pressed="${st.prods.has(p)}">${esc(p)}</button>`).join('')}</div>
-      <p class="err" id="err" hidden>1つ以上選んでな</p><button class="go" id="done">採点する</button></div>`;
+      <p class="err" id="err" hidden>1つ以上選んでね</p><button class="go" id="done">採点する</button></div>`;
     app.querySelectorAll('.prod').forEach(b => { b.onclick = () => {
       const p = b.dataset.p;
       st.prods.has(p) ? st.prods.delete(p) : st.prods.add(p);
@@ -410,7 +410,7 @@ async function play(no) {
       if (!st.prods.size) { document.getElementById('err').hidden = false; return; }
       spin();
       const { result: r } = await api('dojo_result', { no, picks: st.picks, prods: [...st.prods] });
-      if (!r) return fail('採点がうまくいかんかった。もう一回やってみてな。');
+      if (!r) return fail('採点がうまくいかなかった。もう一回やってみてね。');
       showResult(r);
     };
   };
@@ -423,7 +423,7 @@ async function play(no) {
       <p class="sec">つなげられる商材</p>
       <ul class="pts">${r.products.map(p => {
         const ok = p.ok === p.picked;
-        const tag = p.ok ? (p.picked ? '言えた' : '言えへんかった') : '今回は入らへん';
+        const tag = p.ok ? (p.picked ? '言えた' : '言えなかった') : '今回は入らない';
         return `<li><span class="m ${ok ? 'ok' : 'ng'}">${ok ? '◯' : '✕'}</span><span>${p.mark ? esc(p.mark) + ' ' : ''}${esc(p.name)}（${tag}）<small>${esc(p.why)}</small></span></li>`;
       }).join('')}</ul>
       <p class="sec">${esc(card.name)}の本当の悩み</p><div class="line-card">${esc(r.worry)}</div>
@@ -445,10 +445,10 @@ async function shiryo() {
   const list = () => {
     app.innerHTML = `<div class="brand">資料室</div>` + (docs.length ? docs.map(d => `<div class="card doc">
         <h3>${esc(d.title)}</h3>
-        <p class="small">${d.pages}ページ${d.chapters.length ? `・${d.chapters.length}章` : ''}${d.daily ? `・1日1章ずつ読めるで（いま${d.unlocked}ページまで）` : ''}</p>
+        <p class="small">${d.pages}ページ${d.chapters.length ? `・${d.chapters.length}章` : ''}${d.daily ? `・1日1章ずつ読めるよ（いま${d.unlocked}ページまで）` : ''}</p>
         <div class="bar"><i style="width:${d.pages ? Math.min(100, d.best / d.pages * 100) : 0}%"></i></div>
         <div class="row2">${d.last > 1 ? `<button class="go" data-doc="${esc(d.id)}" data-page="${d.last}">続きから（${d.last}ページ）</button>` : ''}<button class="${d.last > 1 ? 'ghost' : 'go'}" data-doc="${esc(d.id)}" data-page="1">はじめから</button></div></div>`).join('')
-      : `<div class="card center"><p class="big-msg">まだ資料がないで</p><p class="note">資料が入ったら、ここに出てくるよ。</p></div>`);
+      : `<div class="card center"><p class="big-msg">まだ資料がないよ</p><p class="note">資料が入ったら、ここに出てくるよ。</p></div>`);
     app.querySelectorAll('[data-doc]').forEach(b => { b.onclick = () => view(docs.find(d => d.id === b.dataset.doc), Number(b.dataset.page)); });
   };
   const cache = {};
@@ -466,7 +466,7 @@ async function shiryo() {
       const chapters = d.chapters.map((c, i) => `<option value="${c.start}" ${c.start <= p && (!d.chapters[i + 1] || d.chapters[i + 1].start > p) ? 'selected' : ''} ${c.start > (r && r.unlocked || d.unlocked) ? 'disabled' : ''}>${esc(c.title)}</option>`).join('');
       app.innerHTML = `<div class="viewer-top"><button class="ghost" id="back" style="padding:6px 10px">◀ 一覧</button><span class="t">${esc(d.title)}</span>${chapters ? `<select id="ch" aria-label="章">${chapters}</select>` : ''}</div>
         <div class="sheet" id="sheet" style="aspect-ratio:1/1.414">
-          ${r && r.img ? '' : `<div class="lock"><p class="big-msg">${r && r.error === 'locked' ? 'この先は明日' : '読めへんかった'}</p><p class="note">${r && r.error === 'locked' ? '1日1章ずつ読めるようになるで。また明日な！' : '電波のいいところで開き直してな。'}</p></div>`}</div>
+          ${r && r.img ? '' : `<div class="lock"><p class="big-msg">${r && r.error === 'locked' ? 'この先は明日' : '読めなかった'}</p><p class="note">${r && r.error === 'locked' ? '1日1章ずつ読めるようになるよ。また明日ね！' : '電波のいいところで開き直してね。'}</p></div>`}</div>
         <div class="pager"><button id="prev" aria-label="前のページ" ${p <= 1 ? 'disabled' : ''}>◀</button><span class="pg">${p} / ${d.pages}</span><button id="next" aria-label="次のページ" ${p >= d.pages ? 'disabled' : ''}>▶</button></div>`;
       const sheet = document.getElementById('sheet');
       if (r && r.img) {
@@ -499,13 +499,15 @@ async function shiryo() {
 const PAGES = { mypage: ['pop', mypage], shindan: ['pixel', shindan], dojo: ['pop', () => { location.replace('game.html'); throw new Stop(); }], shiryo: ['pop', shiryo] };
 
 (async () => {
+  // ロープレはLINEの準備を待たずにすぐ game.html へ（game.html 側で準備する）
+  if (PAGE === 'dojo') return location.replace('game.html');
   const [theme, run] = PAGES[PAGE] || PAGES.mypage;
   document.body.dataset.theme = theme;
   try {
     await liff.init({ liffId: LIFF_ID });
-  } catch (e) { return fail('LINEの準備ができへんかった。LINEアプリから開き直してな。'); }
+  } catch (e) { return fail('LINEの準備ができなかった。LINEアプリから開き直してね。'); }
   if (!liff.isLoggedIn()) return liff.login({ redirectUri: location.href });
-  try { await run(); } catch (e) { if (!(e instanceof Stop)) fail('うまく表示できへんかった。開き直してな。'); }
+  try { await run(); } catch (e) { if (!(e instanceof Stop)) fail('うまく表示できなかった。開き直してね。'); }
 })();
 </script>
 </body>
