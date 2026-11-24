@@ -505,7 +505,6 @@ async function linePlay(id) {
     <div class="detail c${c.star}">${ch(c.id, 'normal')}<span class="small" style="color:inherit">${STARS(c.star)}</span><h2>${esc(c.name)}</h2>
     ${c.mission ? `<div class="mission">🎯 ミッション<b>${esc(c.mission)}</b></div>` : ''}<dl><dt>年齢</dt><dd>${c.age}歳</dd><dt>仕事</dt><dd>${esc(c.job)}</dd><dt>性格</dt><dd>${esc(c.per)}</dd>
     <dt>関係</dt><dd>${esc(c.rel)}（${esc(c.dist)}）</dd>${c.topic ? `<dt>前回</dt><dd>${esc(c.topic)}</dd>` : ''}${c.sched ? `<dt>予定</dt><dd>${esc(c.sched)}</dd>` : ''}</dl></div>
-    <p class="note">ゴールは${esc(c.name)}がはっきり「行く」と決めること（アポなら「2人で行く」と決まること）。${g.timer ? `1通${g.timer}秒。` : '時間制限なし。'}相手の返事をよく読んで。</p>
     <button class="btn" id="go">準備OK、スタート</button></div>`);
   mountChars();
   document.getElementById('back').onclick = lineRooms;
