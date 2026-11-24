@@ -200,7 +200,7 @@ const sprite = k => `<span class="jt" style="--jc:${JC[k]}">${spr(k)}</span>`;
 const app = document.getElementById('app');
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const PAGE = new URLSearchParams(location.search).get('p') || 'mypage';
-const go = p => { if (p === 'dojo') location.href = 'game.html'; else location.search = '?p=' + p; };
+const go = p => { if (p === 'dojo') location.href = 'game.html?v=25'; else location.search = '?p=' + p; };
 const top0 = () => window.scrollTo(0, 0);
 const spin = () => { app.innerHTML = '<div class="spin" role="status" aria-label="読み込み中"></div>'; };
 
@@ -496,11 +496,11 @@ async function shiryo() {
 /* ---------- 起動 ---------- */
 
 // ロープレは game.html（作り直し版）へ
-const PAGES = { mypage: ['pop', mypage], shindan: ['pixel', shindan], dojo: ['pop', () => { location.replace('game.html'); throw new Stop(); }], shiryo: ['pop', shiryo] };
+const PAGES = { mypage: ['pop', mypage], shindan: ['pixel', shindan], dojo: ['pop', () => { location.replace('game.html?v=25'); throw new Stop(); }], shiryo: ['pop', shiryo] };
 
 (async () => {
   // ロープレはLINEの準備を待たずにすぐ game.html へ（game.html 側で準備する）
-  if (PAGE === 'dojo') return location.replace('game.html');
+  if (PAGE === 'dojo') return location.replace('game.html?v=25');
   const [theme, run] = PAGES[PAGE] || PAGES.mypage;
   document.body.dataset.theme = theme;
   try {
