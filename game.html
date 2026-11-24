@@ -199,6 +199,7 @@ input.type { width: 100%; font: inherit; font-size: 18px; padding: 12px; border-
 .ref.銅 { border-color: #c47a3a; } .ref.銀 { border-color: #9aa3ad; background: #f6f8fa; } .ref.金 { border-color: #e0b400; background: #fff8d9; }
 .ref.none { background: #ececec; border-style: dashed; align-items: center; justify-content: center; min-height: 92px; color: #aaa; font-size: 30px; }
 .ref .ch { width: 46px; }
+.mission{margin:10px 0 6px;padding:10px 12px;border-radius:12px;background:#fff4d6;color:#7a4b00;font-size:13px;text-align:left}.mission b{display:block;font-size:16px;margin-top:2px}
 </style>
 </head>
 <body>
@@ -502,15 +503,15 @@ async function linePlay(id) {
   const c = g.char;
   page(`<div class="page"><div class="bar-top"><button class="back" id="back">◀</button><h1>LINEの準備</h1></div>
     <div class="detail c${c.star}">${ch(c.id, 'normal')}<span class="small" style="color:inherit">${STARS(c.star)}</span><h2>${esc(c.name)}</h2>
-    <dl><dt>年齢</dt><dd>${c.age}歳</dd><dt>仕事</dt><dd>${esc(c.job)}</dd><dt>性格</dt><dd>${esc(c.per)}</dd>
+    ${c.mission ? `<div class="mission">🎯 ミッション<b>${esc(c.mission)}</b></div>` : ''}<dl><dt>年齢</dt><dd>${c.age}歳</dd><dt>仕事</dt><dd>${esc(c.job)}</dd><dt>性格</dt><dd>${esc(c.per)}</dd>
     <dt>関係</dt><dd>${esc(c.rel)}（${esc(c.dist)}）</dd>${c.topic ? `<dt>前回</dt><dd>${esc(c.topic)}</dd>` : ''}${c.sched ? `<dt>予定</dt><dd>${esc(c.sched)}</dd>` : ''}</dl></div>
-    <p class="note">ゴールは${esc(c.name)}がはっきり「行く」と決めること。${g.timer ? `1通${g.timer}秒。` : '時間制限なし。'}相手の返事をよく読んで。</p>
+    <p class="note">ゴールは${esc(c.name)}がはっきり「行く」と決めること（アポなら「2人で行く」と決まること）。${g.timer ? `1通${g.timer}秒。` : '時間制限なし。'}相手の返事をよく読んで。</p>
     <button class="btn" id="go">準備OK、スタート</button></div>`);
   mountChars();
   document.getElementById('back').onclick = lineRooms;
   await new Promise(r => { document.getElementById('go').onclick = r; });
   page(`<div class="talk"><div class="talk-head"><button class="back" id="back" style="background:none;border:none;color:#fff">◀</button>${ch(c.id, 'normal')}<div><b>${esc(c.name)} <small id="md"></small></b><span>${esc(c.rel)}・${esc(c.dist)}</span></div></div>
-    <div class="msgs" id="msgs"><div class="sys">${esc(c.name)}（${esc(c.rel)}）を飲み会に誘おう</div></div><div class="timer" id="timer" hidden><i></i></div><div class="choices" id="chs"></div></div>`);
+    <div class="msgs" id="msgs"><div class="sys">${c.mission ? `🎯 ${esc(c.mission)}` : `${esc(c.name)}（${esc(c.rel)}）を飲み会に誘おう`}</div></div><div class="timer" id="timer" hidden><i></i></div><div class="choices" id="chs"></div></div>`);
   mountChars();
   document.getElementById('back').onclick = lineRooms;
   const msgs = document.getElementById('msgs'), chs = document.getElementById('chs');
