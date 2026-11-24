@@ -366,19 +366,7 @@ function room(d, star) {
       <b>${esc(c.name)}</b><small>${c.age}歳・${esc(c.job)}</small>${c.ready ? '' : '<small>準備中</small>'}</button>`).join('')}</div></div>`);
   mountChars();
   document.getElementById('back').onclick = apoRooms;
-  on('[data-pick]', b => { const c = r.chars.find(x => x.id === b.dataset.pick); if (c.ready) charDetail(d, c); });
-}
-
-function charDetail(d, c) {
-  page(`<div class="page"><div class="bar-top"><button class="back" id="back">◀</button><h1>人物カード</h1></div>
-    <div class="detail c${c.star}">${ch(c.id, 'normal')}<span class="small" style="color:inherit">${STARS(c.star)}　${ROOM[c.star]}</span><h2>${esc(c.name)}</h2>
-    <dl><dt>年齢</dt><dd>${c.age}歳</dd><dt>仕事</dt><dd>${esc(c.job)}</dd><dt>趣味</dt><dd>${esc(c.hobby)}</dd><dt>性格</dt><dd>${esc(c.per)}</dd>
-    ${c.n ? `<dt>ベスト</dt><dd>${c.best}点（${esc(c.rank)}）・${c.n}回</dd>` : ''}</dl></div>
-    <p class="note">${c.star >= 3 ? '★3からは1問13秒。勝負どころは時間なし。' : '時間制限なし。じっくり選んでね。'}途中で正解は出ないよ。相手の顔をよく見て。</p>
-    <button class="btn" id="go">アポ開始</button></div>`);
-  mountChars();
-  document.getElementById('back').onclick = () => room(d, c.star);
-  document.getElementById('go').onclick = () => apoPlay(c.id, d);
+  on('[data-pick]', b => { const c = r.chars.find(x => x.id === b.dataset.pick); if (c.ready) apoPlay(c.id, d); });
 }
 
 async function apoPlay(id, list) {
@@ -387,11 +375,17 @@ async function apoPlay(id, list) {
   if (g.error) return fail(g.error === 'locked' ? 'この部屋はまだ開いていないよ。' : 'この人はまだ準備中だよ。');
   const c = g.char, boss = c.star === 6;
   let heart = g.open, at = g.start, picks = [];
-  if (boss) {
-    page(`<div class="vs">${ch(c.id, 'wary')}<span class="mark">VS</span><b>${esc(c.name)}</b><p>${esc(g.intro)}</p><p class="small" style="color:#ddd">四天王は「倒す相手」じゃない。「心でつながる相手」だよ。</p><button class="btn" id="go" style="max-width:300px">はじめる</button></div>`);
-    mountChars();
-    await new Promise(r => { document.getElementById('go').onclick = r; });
-  }
+  // 開始前の準備画面：相手の情報と今日の状況を見てからスタート
+  page(`<div class="page"><div class="bar-top"><button class="back" id="back">◀</button><h1>${boss ? '四天王戦' : 'アポの準備'}</h1></div>
+    <div class="detail c${c.star}">${ch(c.id, boss ? 'wary' : 'normal')}<span class="small" style="color:inherit">${STARS(c.star)}　${ROOM[c.star]}</span><h2>${esc(c.name)}</h2>
+    <dl><dt>年齢</dt><dd>${c.age}歳</dd><dt>仕事</dt><dd>${esc(c.job)}</dd><dt>趣味</dt><dd>${esc(c.hobby)}</dd><dt>性格</dt><dd>${esc(c.per)}</dd>
+    <dt>場所</dt><dd>${esc(g.place)}</dd><dt>状況</dt><dd>${esc(g.intro)}</dd>
+    ${g.best != null ? `<dt>ベスト</dt><dd>${g.best}点</dd>` : ''}</dl></div>
+    <p class="note">${boss ? '四天王は「倒す相手」じゃない。「心でつながる相手」だよ。' : ''}${c.star >= 3 ? '1問13秒。勝負どころは時間なし。' : '時間制限なし。じっくり選んでね。'}途中で正解は出ないよ。相手の顔をよく見て。</p>
+    <button class="btn" id="go">準備OK、スタート</button></div>`);
+  mountChars();
+  document.getElementById('back').onclick = () => list ? room(list, c.star) : apoRooms();
+  await new Promise(r => { document.getElementById('go').onclick = r; });
   page(`<div class="play" id="play"><div class="stage" id="stage">${boss ? '<div class="aura"></div>' : ''}<div class="hud"><span class="pill">${esc(g.place)}・${esc(c.name)}</span><span class="pill" id="cnt"></span></div>${ch(c.id, 'normal')}<div class="say" id="say"></div></div>
     <div class="timer" id="timer" hidden><i></i></div><div class="choices" id="chs"></div></div>`);
   mountChars();
@@ -502,6 +496,15 @@ async function linePlay(id) {
   const g = await api('g_line_start', { id });
   if (g.error) return fail('まだ開いていないよ。');
   const c = g.char;
+  page(`<div class="page"><div class="bar-top"><button class="back" id="back">◀</button><h1>LINEの準備</h1></div>
+    <div class="detail c${c.star}">${ch(c.id, 'normal')}<span class="small" style="color:inherit">${STARS(c.star)}</span><h2>${esc(c.name)}</h2>
+    <dl><dt>年齢</dt><dd>${c.age}歳</dd><dt>仕事</dt><dd>${esc(c.job)}</dd><dt>性格</dt><dd>${esc(c.per)}</dd>
+    <dt>関係</dt><dd>${esc(c.rel)}（${esc(c.dist)}）</dd>${c.topic ? `<dt>前回</dt><dd>${esc(c.topic)}</dd>` : ''}${c.sched ? `<dt>予定</dt><dd>${esc(c.sched)}</dd>` : ''}</dl></div>
+    <p class="note">ゴールは${esc(c.name)}がはっきり「行く」と決めること。${g.timer ? `1通${g.timer}秒。` : '時間制限なし。'}相手の返事をよく読んで。</p>
+    <button class="btn" id="go">準備OK、スタート</button></div>`);
+  mountChars();
+  document.getElementById('back').onclick = lineRooms;
+  await new Promise(r => { document.getElementById('go').onclick = r; });
   page(`<div class="talk"><div class="talk-head"><button class="back" id="back" style="background:none;border:none;color:#fff">◀</button>${ch(c.id, 'normal')}<div><b>${esc(c.name)}</b><span>${esc(c.rel)}・${esc(c.dist)}</span></div></div>
     <div class="msgs" id="msgs"><div class="sys">${esc(c.name)}（${esc(c.rel)}）を飲み会に誘おう</div></div><div class="timer" id="timer" hidden><i></i></div><div class="choices" id="chs"></div></div>`);
   mountChars();
