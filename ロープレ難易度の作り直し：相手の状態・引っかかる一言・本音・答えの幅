@@ -434,17 +434,19 @@ async function apoPlay(id, list) {
       at = s.tmo; continue;
     }
     const x = s.ch[k];
+    const band = heart < 30 ? 'w' : heart >= 70 ? 'o' : 'n';  // そのときの相手の状態で、同じ言葉でも結果が変わる
+    const xh = x.hs ? x.hs[band] : x.h, xr = x.rs ? x.rs[band] : x.reply, xn = x.gs ? x.gs[band] : x.next;
     showSay(x.text, '', true); chs.innerHTML = ''; await sleep(1000);
     const heavy = s.big && x.omoi && heart < s.need;
-    if (heavy) heart -= 15; else heart += x.h;
+    if (heavy) heart -= 15; else heart += xh;
     heart = Math.max(0, Math.min(100, heart));
-    const f = heavy || x.h < 0 ? 'down' : x.h >= 12 ? 'open' : baseFace();
+    const f = heavy || xh < 0 ? 'down' : xh >= 12 ? 'open' : baseFace();
     setFace(face(), f);
     if (f === 'down') { face().classList.add('shake'); setTimeout(() => face() && face().classList.remove('shake'), 400); }
     mood();
-    showSay(heavy ? (x.replyLow || '…ちょっと重いっすね') : x.reply);
+    showSay(heavy ? (x.replyLow || '…ちょっと重いっすね') : xr);
     await tapNext();
-    at = x.next;
+    at = xn;
   }
   play.classList.remove('big-scene');
   spin();
@@ -459,15 +461,17 @@ function apoResultView(c, r, list) {
     <div class="score"><p class="note">${esc(c.name)}とのアポ</p><div class="n">${r.score}<small>点</small></div><span class="rank ${r.rank}">${r.rank}</span>${r.best > r.score ? `<p class="small">ベスト ${r.best}点</p>` : ''}</div>
     ${r.roomClear ? `<div class="ev room pop">🎉 ${esc(ROOM[c.star])}の部屋を全員クリア！「${esc(r.nextRoom)}」の部屋が開いた！</div>` : r.firstClear ? `<div class="ev title">✨ ${esc(c.name)}をクリア！</div>` : ''}
     ${evHtml(r.events)}
-    <div class="card"><div class="split"><span>やり方</span><div class="b"><i style="width:${r.method / r.wm * 100}%"></i></div><span>${r.method}/${r.wm}</span>
-      <span>想い</span><div class="b h"><i style="width:${r.heart / r.wh * 100}%"></i></div><span>${r.heart}/${r.wh}</span></div>
+    <div class="card"><h2>${r.honne ? '🔓 本音まで聞けた' : '🔒 本音までは届かなかった'}</h2>
+      ${r.honne ? `<div class="line-card">${esc(r.honneLine)}</div>` : `<p class="small">${esc(r.honneHint)}</p>`}</div>
+    <div class="card"><div class="split">${[['会話', 'talk', 35], ['想い', 'omoi', 15], ['最後の空気', 'air', 20], ['本音', 'honne', 30]].map(([nm, k, mx]) => `<span>${nm}</span><div class="b${k === 'honne' || k === 'omoi' ? ' h' : ''}"><i style="width:${r.parts[k] / mx * 100}%"></i></div><span>${r.parts[k]}/${mx}</span>`).join('')}</div>
+      <p class="small">本音まで聞けないと、Bランクまで。相手の顔と、途中でぽろっと出た一言をよく見よう。</p>
       ${r.boss && !r.conn ? `<p class="small">${r.score >= 80 ? '点は高い。でも、本物の想いが届いていない。理屈だけではつながれないよ。' : 'Aランク以上で、しかも勝負どころで本物の想いを届けると「心でつながった！」になるよ。'}</p>` : ''}</div>
     ${r.moved ? `<div class="card"><h2>心が動いた一言</h2><div class="line-card">${esc(r.moved)}</div></div>` : ''}
     <div class="card"><h2>よかった点</h2><p>${esc(r.good)}</p><h2>次に直す点</h2><p>${esc(r.fix)}</p><h2>次に試す一言</h2><div class="line-card">${esc(r.tryLine)}</div>
       <h2>${esc(c.name)}の本当の悩み</h2><p>${esc(r.worry)}</p></div>
     <div class="card"><details><summary>場面ごとのふりかえり（${r.review.filter(x => x.ok).length}/${r.review.length}ベスト）</summary>
       ${r.review.map((x, i) => `<div class="rv"><span class="q">${i + 1}. ${x.big ? '【勝負どころ】' : x.prod ? '【商材つなぎ】' : ''}「${esc(x.say)}」</span>
-        <span class="m"><span class="mk ${x.ok ? 'ok' : 'ng'}">${x.ok ? '◯' : '✕'}</span> あなた：${esc(x.mine)}${x.kind ? `（${esc(x.kind)}）` : ''}</span>
+        <span class="m"><span class="mk ${x.ok ? 'ok' : x.good ? 'ok' : 'ng'}">${x.ok ? '◯' : x.good ? '○' : '✕'}</span> あなた：${esc(x.mine)}${x.kind ? `（${esc(x.kind)}）` : ''}</span>
         ${x.ok ? '' : `<span class="b">ベスト：${esc(x.best)}${x.bestKind ? `（${esc(x.bestKind)}）` : ''}</span>`}
         <span class="w">${esc(x.why)}${x.note ? `<br>⚠ ${esc(x.note)}` : ''}</span></div>`).join('')}</details></div>
     <div class="row"><button class="btn" id="again">もう1回</button><button class="btn sub" id="list">部屋にもどる</button></div></div>`);
@@ -505,7 +509,7 @@ async function linePlay(id) {
   mountChars();
   document.getElementById('back').onclick = lineRooms;
   await new Promise(r => { document.getElementById('go').onclick = r; });
-  page(`<div class="talk"><div class="talk-head"><button class="back" id="back" style="background:none;border:none;color:#fff">◀</button>${ch(c.id, 'normal')}<div><b>${esc(c.name)}</b><span>${esc(c.rel)}・${esc(c.dist)}</span></div></div>
+  page(`<div class="talk"><div class="talk-head"><button class="back" id="back" style="background:none;border:none;color:#fff">◀</button>${ch(c.id, 'normal')}<div><b>${esc(c.name)} <small id="md"></small></b><span>${esc(c.rel)}・${esc(c.dist)}</span></div></div>
     <div class="msgs" id="msgs"><div class="sys">${esc(c.name)}（${esc(c.rel)}）を飲み会に誘おう</div></div><div class="timer" id="timer" hidden><i></i></div><div class="choices" id="chs"></div></div>`);
   mountChars();
   document.getElementById('back').onclick = lineRooms;
@@ -513,11 +517,17 @@ async function linePlay(id) {
   const scroll = () => { window.scrollTo(0, document.body.scrollHeight); };
   const add = html => { msgs.insertAdjacentHTML('beforeend', html); mountChars(msgs); scroll(); };
   const you = t => add(`<div class="m you pop">${ch(c.id, 'normal', 'av')}${esc(t)}</div>`);
-  let at = g.start; const picks = [];
+  let at = g.start, cur = g.mood; const picks = [];
+  const UP = ['tired', 'normal', 'good'];
+  const MD = { good: '🟢 返事が早い', normal: '', tired: '💤 返事が遅め' };
+  const showMd = () => { const e = document.getElementById('md'); if (e) e.textContent = MD[cur]; };
+  showMd();
+  const pickR = r => { const a = r ? (r[cur] || r.normal || []) : []; return a.length ? a[Math.floor(Math.random() * a.length)] : ''; };
   while (true) {
     const n = g.nodes[at];
     if (n.end) break;
-    if (n.say && n.say.length) { await sleep(500); you(n.say[Math.floor(Math.random() * n.say.length)]); }
+    const sayNow = pickR(n.say);
+    if (sayNow) { await sleep(500); you(sayNow); }
     chs.innerHTML = n.ch.map((x, i) => i).sort(() => Math.random() - .5).map(i => { const x = n.ch[i]; return `<button class="choice${x.act ? ' act' : ''}" data-k="${i}">${x.act ? '⏳ ' : ''}${esc(x.text)}</button>`; }).join('');
     scroll();
     const k = await new Promise(res => {
@@ -540,7 +550,9 @@ async function linePlay(id) {
     await sleep(700);
     const mine = msgs.querySelectorAll('.m.me .rd'); if (mine.length && !x.act) mine[mine.length - 1].hidden = false;
     if (x.wait) { await sleep(500); add(`<div class="sys">${esc(x.wait)}</div>`); }
-    const rep = x.r && x.r.length ? x.r[Math.floor(Math.random() * x.r.length)] : '';
+    const rep = pickR(x.r);
+    cur = UP[Math.max(0, Math.min(2, UP.indexOf(cur) + (x.mv || 0)))];  // 返し方で相手の機嫌が変わる
+    showMd();
     if (rep && !/^（既読/.test(rep)) {
       add('<div class="typing" id="typ"><i></i><i></i><i></i></div>');
       await sleep(900 + Math.min(1600, rep.length * 40));
@@ -556,10 +568,12 @@ async function linePlay(id) {
   page(`<div class="page">
     <div class="score"><p class="note">${esc(c.name)}へのお誘い</p><p style="font-weight:800">${esc(r.endName)}</p><div class="n">${r.score}<small>点</small></div><span class="rank ${r.rank}">${r.rank}</span></div>
     ${evHtml(r.events)}
-    <div class="card"><h2>7つの技　${r.waza.filter(w => w.used).length}/${r.waza.length}</h2><div class="waza">${r.waza.map(w => `<span class="${w.used ? 'ok' : 'ng'}">${w.used ? '✓' : '・'}</span><span>${esc(w.name)}<small>${esc(w.psy)}：${esc(w.why)}</small></span>`).join('')}
+    <div class="card"><div class="split">${[['返し方', 'judge', 40], ['結果', 'end', 30], ['最後の機嫌', 'mood', 15], ['引っかかる一言', 'hook', 15]].map(([nm, k, mx]) => `<span>${nm}</span><div class="b"><i style="width:${r.parts[k] / mx * 100}%"></i></div><span>${r.parts[k]}/${mx}</span>`).join('')}</div>
+      ${r.hookHint ? `<p class="small">🔒 拾えなかった一言：${esc(r.hookHint)}</p>` : r.picked ? '<p class="small">🔓 相手がぽろっと言った一言を拾えた</p>' : ''}</div>
+    <div class="card"><h2>使えた技</h2><div class="waza">${r.waza.map(w => `<span class="${w.used ? 'ok' : 'ng'}">${w.used ? '✓' : '・'}</span><span>${esc(w.name)}<small>${esc(w.psy)}：${esc(w.why)}</small></span>`).join('')}
       ${r.extra.map(w => `<span class="ok">◎</span><span>${esc(w.name)}<small>${esc(w.psy)}</small></span>`).join('')}</div>
-      ${r.minus ? `<p class="small" style="color:var(--bad)">NG集の減点 −${r.minus}</p>` : ''}${r.closed ? '' : '<p class="small">最後を「楽しみにしてる」で締めると10点アップ</p>'}</div>
-    <div class="card"><h2>今日の${esc(c.name)}</h2><p>${esc(r.moodNote)}</p></div>
+      ${r.minus ? `<p class="small" style="color:var(--bad)">NG集の減点 −${r.minus}</p>` : ''}</div>
+    <div class="card"><h2>今日の${esc(c.name)}</h2><p>${esc(r.moodNote)}</p><p class="small">機嫌：${esc(r.mood)} → ${esc(r.moodEnd)}</p></div>
     <div class="card"><h2>よかった点</h2><p>${esc(r.good)}</p><h2>次に直す点</h2><p>${esc(r.fix)}</p><h2>次に送る一言</h2><div class="line-card">${esc(r.tryLine)}</div></div>
     <div class="card"><details><summary>やりとりのふりかえり</summary>${r.review.map((x, i) => `<div class="rv"><span class="m"><span class="mk ${x.ok ? 'ok' : 'ng'}">${x.ok ? '◯' : '✕'}</span> ${esc(x.mine)}</span>${x.ok ? '' : `<span class="b">ベスト：${esc(x.best)}</span>`}<span class="w">${esc(x.why)}${x.note ? `<br>⚠ ${esc(x.note)}` : ''}</span></div>`).join('')}</details></div>
     <div class="row"><button class="btn" id="again">もう1回</button><button class="btn sub" id="list">一覧</button></div></div>`);
@@ -586,7 +600,7 @@ async function drill() {
     const q = d.qs[i];
     const order = [0, 1, 2, 3].sort(() => Math.random() - .5);
     page(`<div class="page">${header()}<div class="timer" id="timer"><i></i></div>
-      <div class="q-card"><div class="q-who">${q.who ? ch(q.who.id, 'wary') : ''}<div><span class="g">${esc(q.g)}</span><p class="small">${esc(q.scene)}</p>${q.who ? `<p style="font-weight:800">${esc(q.who.name)}</p>` : ''}</div></div>
+      <div class="q-card"><div class="q-who">${q.who ? ch(q.who.id, 'wary') : ''}<div><span class="g">${esc(q.g)}</span><p class="small">${esc(q.scene)}</p>${q.who ? `<p style="font-weight:800">${esc(q.who.name)}</p>` : ''}${q.st ? `<p class="small">相手の様子：${esc(q.st)}</p>` : ''}</div></div>
       <p class="q-say">「${esc(q.say)}」</p></div><p class="small">どう返す？（30秒）</p>
       <div class="choices" style="padding:0;background:none">${order.map(k => `<button class="choice opt" data-k="${k}">${esc(q.ch[k])}</button>`).join('')}</div></div>`);
     mountChars();
@@ -600,11 +614,13 @@ async function drill() {
       const local = typeof q.a === 'number';
       const show = r => {
         res.push(r.ok ? 1 : 0);
-        app.querySelectorAll('.opt').forEach(b => { const n = Number(b.dataset.k); if (n === r.a) b.classList.add('ok'); else if (n === k) b.classList.add('ng'); });
+        const oks = [r.a].concat(q.ok || []);
+        app.querySelectorAll('.opt').forEach(b => { const n = Number(b.dataset.k); if (oks.includes(n)) b.classList.add('ok'); else if (n === k) b.classList.add('ng'); });
         const fb = document.createElement('div');
         fb.className = 'fb pop ' + (r.ok ? 'ok' : 'ng');
         const last = i + 1 >= d.qs.length;
-        fb.innerHTML = `<b>${r.ok ? '◯ 正解！' : k === -1 ? '⏰ 時間切れ' : '✕ ざんねん'}</b>${esc(r.why)}<div class="extra"></div><button class="btn" id="nx" style="margin-top:8px">${last ? '結果を見る' : '次の問題へ'}</button>`;
+        const alt = r.ok && k !== r.a;
+        fb.innerHTML = `<b>${alt ? '◯ これもいい答え！' : r.ok ? '◯ 正解！' : k === -1 ? '⏰ 時間切れ' : '✕ ざんねん'}</b>${esc(alt && q.okWhy ? q.okWhy : r.why)}<div class="extra"></div><button class="btn" id="nx" style="margin-top:8px">${last ? '結果を見る' : '次の問題へ'}</button>`;
         app.querySelector('.page').appendChild(fb); fb.scrollIntoView({ behavior: 'smooth', block: 'end' });
         return fb;
       };
@@ -614,7 +630,7 @@ async function drill() {
       };
       const sent = (drill.q = (drill.q || Promise.resolve()).then(() => api('g_drill_answer', { qid: q.id, pick: k })).catch(() => ({ error: 'net' })));
       let fb, r;
-      if (local) { r = { ok: k === q.a, a: q.a, why: q.why || '' }; fb = show(r); sent.then(x => { if (!x.error) extra(fb, x); }); }
+      if (local) { r = { ok: k === q.a || (q.ok || []).includes(k), a: q.a, why: q.why || '' }; fb = show(r); sent.then(x => { if (!x.error) extra(fb, x); }); }
       else { r = await sent; if (r.error) return fail('うまく届かなかった。開き直してね。'); fb = show(r); extra(fb, r); }
       document.getElementById('nx').onclick = async () => {
         i++;
